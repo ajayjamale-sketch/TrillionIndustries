@@ -12,7 +12,7 @@ const STATS = [
 ];
 
 export function HeroSection() {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleDemoLogin = async (email: string) => {
@@ -91,7 +91,7 @@ export function HeroSection() {
             {/* CTAs */}
             <div className="flex flex-wrap items-center justify-center gap-3 relative z-20">
               <Link
-                to="/register"
+                to={isAuthenticated ? "/payment" : "/register"}
                 className="flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#1E40AF] hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-900/40 transition-all hover:translate-y-[-1px] active:translate-y-0 border border-blue-500/40"
               >
                 Start Free Trial <ArrowRight className="h-4 w-4" />

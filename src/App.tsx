@@ -9,6 +9,10 @@ import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Payment from './pages/Payment';
+import Careers from './pages/Careers';
+import Press from './pages/Press';
+import Partners from './pages/Partners';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
@@ -38,6 +42,10 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/partners" element={<Partners />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* All dashboard routes — handled internally by Dashboard.tsx */}

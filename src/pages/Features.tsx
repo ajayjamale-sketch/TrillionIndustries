@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/features/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useAuth } from '@/hooks/useAuth';
 import { FEATURES_LIST } from '@/constants';
 import {
   Factory, Network, ShoppingCart, Package, Wrench, Users,
@@ -19,6 +20,7 @@ const CATEGORY_GROUPS = ['Core', 'Operations', 'Intelligence', 'Commerce', 'Secu
 
 export default function Features() {
   useScrollTop();
+  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -38,7 +40,7 @@ export default function Features() {
               Every module you need to digitize, automate, and optimize your entire industrial enterprise — on one unified, AI-powered platform.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Link to="/register" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-brand">
+              <Link to={isAuthenticated ? "/payment" : "/register"} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-brand">
                 Start Free Trial <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/pricing" className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border font-semibold text-sm hover:bg-muted transition-colors">
@@ -96,7 +98,7 @@ export default function Features() {
             <h2 className="text-2xl font-extrabold text-foreground">Ready to see it in action?</h2>
             <p className="text-muted-foreground">Get a personalized demo from our industrial experts.</p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Link to="/register" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-brand">
+              <Link to={isAuthenticated ? "/payment" : "/register"} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-brand">
                 Start Free Trial <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/contact" className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border font-semibold text-sm hover:bg-muted transition-colors">

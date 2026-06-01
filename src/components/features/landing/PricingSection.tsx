@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight, Zap, Star } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { PRICING_PLANS } from '@/constants';
 
 export function PricingSection() {
+  const { isAuthenticated } = useAuth();
   const [isAnnual, setIsAnnual] = useState(true);
 
   return (
@@ -100,7 +102,7 @@ export function PricingSection() {
 
                 {/* CTA */}
                 <Link
-                  to="/register"
+                  to={isAuthenticated ? "/payment" : "/register"}
                   className={`flex items-center justify-center gap-2 w-full py-3 rounded-lg font-bold text-sm transition-all mb-6 ${
                     plan.highlighted
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-brand'

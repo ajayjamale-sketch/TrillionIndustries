@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/features/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useAuth } from '@/hooks/useAuth';
 import { Factory, Target, Users, Globe, Award, TrendingUp, ArrowRight, Linkedin, Twitter } from 'lucide-react';
 import factoryBg from '@/assets/factory-bg.jpg';
 
@@ -28,6 +29,7 @@ const MILESTONES = [
 
 export default function About() {
   useScrollTop();
+  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -50,7 +52,7 @@ export default function About() {
               We founded TrillionIndustries with one mission: give every manufacturer — from mid-size plants to global enterprises — access to the same digital infrastructure that powers the world's most efficient factories.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-brand">
+              <Link to={isAuthenticated ? "/payment" : "/register"} className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-brand">
                 Join Us <ArrowRight className="h-4 w-4" />
               </Link>
               <Link to="/contact" className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border font-semibold text-sm hover:bg-muted transition-colors">

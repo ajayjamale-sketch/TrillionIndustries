@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, ChevronRight, UserPlus, Building2, Cog, BarChart3, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const STEPS = [
   {
@@ -50,6 +51,7 @@ const STEPS = [
 ];
 
 export function WorkflowSection() {
+  const { isAuthenticated } = useAuth();
   const [activeStep, setActiveStep] = useState(0);
   const step = STEPS[activeStep];
 
@@ -163,7 +165,7 @@ export function WorkflowSection() {
                   </button>
                 ) : (
                   <Link
-                    to="/register"
+                    to={isAuthenticated ? "/payment" : "/register"}
                     className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-colors"
                   >
                     Start Your Implementation <ArrowRight className="h-4 w-4" />

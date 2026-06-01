@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Phone, CheckCircle2 } from 'lucide-react';
 import factoryBg from '@/assets/factory-bg.jpg';
+import { useAuth } from '@/hooks/useAuth';
 
 const STATS = [
   { value: '2,400+', label: 'Enterprise clients globally' },
@@ -17,6 +18,7 @@ const CHECKS = [
 ];
 
 export function CTABannerSection() {
+  const { isAuthenticated } = useAuth();
   return (
     <section className="py-0 relative overflow-hidden">
       {/* Background */}
@@ -58,7 +60,15 @@ export function CTABannerSection() {
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-3 pt-1">
+            {isAuthenticated ? (
+              <Link
+                to="/payment"
+                className="flex items-center gap-2 px-7 py-3.5 rounded-lg bg-white text-[#0c1220] font-black text-sm hover:bg-gray-100 transition-all hover:translate-y-[-1px] shadow-xl"
+              >
+                Go to Dashboard
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
               <Link
                 to="/register"
                 className="flex items-center gap-2 px-7 py-3.5 rounded-lg bg-white text-[#0c1220] font-black text-sm hover:bg-gray-100 transition-all hover:translate-y-[-1px] shadow-xl"
@@ -66,6 +76,7 @@ export function CTABannerSection() {
                 Start Free Trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
+            )}
               <Link
                 to="/contact"
                 className="flex items-center gap-2 px-6 py-3.5 rounded-lg bg-white/8 border border-white/15 text-white font-semibold text-sm hover:bg-white/15 transition-all"
@@ -93,8 +104,8 @@ export function CTABannerSection() {
               </div>
             ))}
           </div>
-        </div>
       </div>
     </section>
   );
 }
+

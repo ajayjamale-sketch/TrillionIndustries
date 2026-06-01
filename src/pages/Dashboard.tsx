@@ -56,18 +56,26 @@ import { GRNPage } from '@/pages/dashboard/GRNPage';
 import { TransfersPage } from '@/pages/dashboard/TransfersPage';
 import { DispatchPage } from '@/pages/dashboard/DispatchPage';
 import { WarehouseReportsPage } from '@/pages/dashboard/WarehouseReportsPage';
+import { BatchTrackingPage } from '@/pages/dashboard/BatchTrackingPage';
 
 import { AssetRegistryPage } from '@/pages/dashboard/AssetRegistryPage';
+import { AssetProfilesPage } from '@/pages/dashboard/AssetProfilesPage';
+import { IIoTSensorsPage } from '@/pages/dashboard/IIoTSensorsPage';
 import { MaintenanceSchedulePage } from '@/pages/dashboard/MaintenanceSchedulePage';
+import { PreventivePMPage } from '@/pages/dashboard/PreventivePMPage';
 import { BreakdownsPage } from '@/pages/dashboard/BreakdownsPage';
 import { MaintenanceWorkOrdersPage } from '@/pages/dashboard/MaintenanceWorkOrdersPage';
 import { AssetPerformancePage } from '@/pages/dashboard/AssetPerformancePage';
+import { FailureAnalysisPage } from '@/pages/dashboard/FailureAnalysisPage';
 
 import { WorkforceEmployeesPage } from '@/pages/dashboard/WorkforceEmployeesPage';
 import { AttendancePage } from '@/pages/dashboard/AttendancePage';
 import { ShiftsPage } from '@/pages/dashboard/ShiftsPage';
 import { SkillsPage } from '@/pages/dashboard/SkillsPage';
+import { CertificationsPage } from '@/pages/dashboard/CertificationsPage';
+import { ProductivityPage } from '@/pages/dashboard/ProductivityPage';
 import { SafetyPage } from '@/pages/dashboard/SafetyPage';
+import { ComplianceReportsPage } from '@/pages/dashboard/ComplianceReportsPage';
 
 import { InspectionsPage } from '@/pages/dashboard/InspectionsPage';
 import { CreateInspectionPage } from '@/pages/dashboard/CreateInspectionPage';
@@ -542,25 +550,33 @@ function getDashboardSubPage(path: string, user: NonNullable<ReturnType<typeof u
   if (path === '/dashboard/procurement/spend' || path === '/dashboard/procurement/analytics') return <SpendAnalysisPage user={user} />;
 
   // Warehouse
-  if (path === '/dashboard/warehouse/inventory' || path === '/dashboard/warehouse/add-inventory' || path === '/dashboard/warehouse/batches') return <InventoryListPage user={user} />;
+  if (path === '/dashboard/warehouse/inventory' || path === '/dashboard/warehouse/add-inventory') return <InventoryListPage user={user} path={path} />;
+  if (path === '/dashboard/warehouse/batches') return <BatchTrackingPage user={user} />;
   if (path === '/dashboard/warehouse/grn') return <GRNPage user={user} />;
   if (path === '/dashboard/warehouse/transfers') return <TransfersPage user={user} />;
   if (path === '/dashboard/warehouse/dispatch') return <DispatchPage user={user} />;
   if (path === '/dashboard/warehouse/reports' || path === '/dashboard/warehouse/audits') return <WarehouseReportsPage user={user} />;
 
   // Maintenance
-  if (path === '/dashboard/maintenance/assets' || path === '/dashboard/maintenance/asset-profiles') return <AssetRegistryPage user={user} />;
-  if (path === '/dashboard/maintenance/schedule' || path === '/dashboard/maintenance/preventive' || path === '/dashboard/maintenance/sensors') return <MaintenanceSchedulePage user={user} />;
+  if (path === '/dashboard/maintenance/assets') return <AssetRegistryPage user={user} />;
+  if (path === '/dashboard/maintenance/asset-profiles') return <AssetProfilesPage user={user} />;
+  if (path === '/dashboard/maintenance/sensors') return <IIoTSensorsPage user={user} />;
+  if (path === '/dashboard/maintenance/schedule') return <MaintenanceSchedulePage user={user} />;
+  if (path === '/dashboard/maintenance/preventive') return <PreventivePMPage user={user} />;
   if (path === '/dashboard/maintenance/breakdowns') return <BreakdownsPage user={user} />;
   if (path === '/dashboard/maintenance/work-orders') return <MaintenanceWorkOrdersPage user={user} />;
-  if (path === '/dashboard/maintenance/performance' || path === '/dashboard/maintenance/failure-analysis') return <AssetPerformancePage user={user} />;
+  if (path === '/dashboard/maintenance/performance') return <AssetPerformancePage user={user} />;
+  if (path === '/dashboard/maintenance/failure-analysis') return <FailureAnalysisPage user={user} />;
 
   // Workforce
   if (path === '/dashboard/workforce/employees') return <WorkforceEmployeesPage user={user} />;
   if (path === '/dashboard/workforce/attendance') return <AttendancePage user={user} />;
   if (path === '/dashboard/workforce/shifts') return <ShiftsPage user={user} />;
-  if (path === '/dashboard/workforce/skills' || path === '/dashboard/workforce/certifications' || path === '/dashboard/workforce/productivity') return <SkillsPage user={user} />;
-  if (path === '/dashboard/workforce/safety' || path === '/dashboard/workforce/compliance') return <SafetyPage user={user} />;
+  if (path === '/dashboard/workforce/skills') return <SkillsPage user={user} />;
+  if (path === '/dashboard/workforce/certifications') return <CertificationsPage user={user} />;
+  if (path === '/dashboard/workforce/productivity') return <ProductivityPage user={user} />;
+  if (path === '/dashboard/workforce/safety') return <SafetyPage user={user} />;
+  if (path === '/dashboard/workforce/compliance') return <ComplianceReportsPage user={user} />;
 
   // Quality
   if (path === '/dashboard/quality/create-inspection') return <CreateInspectionPage user={user} />;

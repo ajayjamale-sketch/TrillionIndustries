@@ -151,46 +151,60 @@ export const TESTIMONIALS = [
 
 export const FEATURES_LIST = [
   {
-    id: 'feature-1',
-    title: 'Production Management',
+    id: 'mes',
+    title: 'Manufacturing (MES)',
     description: 'Optimize manufacturing lines, track WIP, and monitor OEE in real-time.',
     icon: 'Factory',
     category: 'Core'
   },
   {
-    id: 'feature-2',
-    title: 'Supply Chain & Procurement',
-    description: 'Streamline sourcing, automate POs, and manage supplier performance.',
+    id: 'supply-chain',
+    title: 'Supply Chain Management',
+    description: 'Streamline logistics, manage diverse networks, and mitigate global risks.',
     icon: 'Network',
     category: 'Operations'
   },
   {
-    id: 'feature-3',
-    title: 'Predictive Maintenance',
-    description: 'Use IIoT data to predict machine failures before they impact production.',
+    id: 'procurement',
+    title: 'Procurement Automation',
+    description: 'Automate POs, manage supplier relationships, and track sourcing costs.',
+    icon: 'ShoppingCart',
+    category: 'Operations'
+  },
+  {
+    id: 'inventory',
+    title: 'Inventory & Warehouse',
+    description: 'Real-time stock visibility, automated reordering, and smart warehousing.',
+    icon: 'Package',
+    category: 'Core'
+  },
+  {
+    id: 'assets',
+    title: 'Asset Management',
+    description: 'Track equipment lifecycle, manage depreciation, and schedule maintenance.',
     icon: 'Wrench',
     category: 'Operations'
   },
   {
-    id: 'feature-4',
-    title: 'Quality Control',
+    id: 'iiot',
+    title: 'IIoT Integration',
+    description: 'Connect sensors, PLCs, and legacy machines for live telemetry.',
+    icon: 'Cpu',
+    category: 'Intelligence'
+  },
+  {
+    id: 'quality',
+    title: 'Quality Management',
     description: 'Automate inspections and manage CAPAs with rigorous traceability.',
     icon: 'ShieldCheck',
     category: 'Core'
   },
   {
-    id: 'feature-5',
-    title: 'Enterprise Analytics',
+    id: 'bi',
+    title: 'Business Intelligence',
     description: 'AI-driven insights to uncover inefficiencies and forecast demand.',
     icon: 'BarChart3',
     category: 'Intelligence'
-  },
-  {
-    id: 'feature-6',
-    title: 'Workforce Management',
-    description: 'Track labor costs, certifications, and shop floor safety compliance.',
-    icon: 'Users',
-    category: 'Core'
   }
 ];
 

@@ -1,42 +1,42 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Shield, CheckCircle2, AlertTriangle, Plus, Search, X } from 'lucide-react';
+import { BookOpen, Plus, Search, Calendar, UserCheck, CheckCircle2, AlertTriangle, X, Download } from 'lucide-react';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
 
-interface SafetyRecord {
+interface Certification {
   id: string;
-  type: string;
+  name: string;
   employee: string;
   dept: string;
-  completed: string;
+  issued: string;
   expires: string;
   status: 'Valid' | 'Expiring Soon' | 'Expired';
 }
 
-const INITIAL_RECORDS: SafetyRecord[] = [
-  { id: 'SAF-441', type: 'Safety Induction', employee: 'Chris Okafor', dept: 'Production', completed: '2026-03-15', expires: '2027-03-15', status: 'Valid' },
-  { id: 'SAF-442', type: 'Fire Safety Training', employee: 'Tom Bradley', dept: 'Production', completed: '2026-01-20', expires: '2027-01-20', status: 'Valid' },
-  { id: 'SAF-443', type: 'Forklift Certification', employee: 'Sara Liu', dept: 'Warehouse', completed: '2025-06-05', expires: '2026-06-05', status: 'Expiring Soon' },
-  { id: 'SAF-444', type: 'Electrical Safety', employee: 'James Williams', dept: 'Maintenance', completed: '2024-09-12', expires: '2025-09-12', status: 'Expired' },
+const INITIAL_CERTS: Certification[] = [
+  { id: 'CERT-301', name: 'AWS D1.1 Welder Qualification', employee: 'Chris Okafor', dept: 'Production', issued: '2025-09-15', expires: '2026-09-15', status: 'Valid' },
+  { id: 'CERT-302', name: 'OSHA 30-Hour General Industry', employee: 'Tom Bradley', dept: 'Production', issued: '2024-01-20', expires: '2027-01-20', status: 'Valid' },
+  { id: 'CERT-303', name: 'Forklift Operator License Class I-V', employee: 'Sara Liu', dept: 'Warehouse', issued: '2025-06-05', expires: '2026-06-05', status: 'Expiring Soon' },
+  { id: 'CERT-304', name: 'NFPA 70E Electrical Safety Standard', employee: 'James Williams', dept: 'Maintenance', issued: '2023-09-12', expires: '2024-09-12', status: 'Expired' },
 ];
 
-export function SafetyPage({ user }: { user: User }) {
-  const [records, setRecords] = useState<SafetyRecord[]>(INITIAL_RECORDS);
+export function CertificationsPage({ user }: { user: User }) {
+  const [certs, setCerts] = useState<Certification[]>(INITIAL_CERTS);
   const [search, setSearch] = useState('');
   const [showNew, setShowNew] = useState(false);
 
   // Form State
-  const [type, setType] = useState('');
+  const [name, setName] = useState('');
   const [employee, setEmployee] = useState('');
   const [dept, setDept] = useState('Production');
-  const [completed, setCompleted] = useState('');
+  const [issued, setIssued] = useState('');
   const [expires, setExpires] = useState('');
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!type.trim() || !employee.trim() || !completed || !expires) {
+    if (!name.trim() || !employee.trim() || !issued || !expires) {
       toast.error('Please enter all required fields');
       return;
     }
@@ -44,7 +44,7 @@ export function SafetyPage({ user }: { user: User }) {
     const expDate = new Date(expires);
     const today = new Date();
     const diffDays = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
-
+    
     let status: 'Valid' | 'Expiring Soon' | 'Expired' = 'Valid';
     if (diffDays <= 0) {
       status = 'Expired';
@@ -52,49 +52,49 @@ export function SafetyPage({ user }: { user: User }) {
       status = 'Expiring Soon';
     }
 
-    const newRecord: SafetyRecord = {
-      id: `SAF-${440 + records.length + 1}`,
-      type,
+    const newCert: Certification = {
+      id: `CERT-${300 + certs.length + 1}`,
+      name,
       employee,
       dept,
-      completed,
+      issued,
       expires,
       status
     };
 
-    setRecords([newRecord, ...records]);
+    setCerts([...certs, newCert]);
     setShowNew(false);
-    toast.success(`Safety Induction card logged for ${employee}`);
+    toast.success(`Certification added: ${newCert.id}`);
 
     // Reset Form
-    setType('');
+    setName('');
     setEmployee('');
-    setCompleted('');
+    setIssued('');
     setExpires('');
   };
 
   const handleRenew = (id: string) => {
-    setRecords(prev => prev.map(rec => {
-      if (rec.id === id) {
+    setCerts(prev => prev.map(c => {
+      if (c.id === id) {
         const nextYear = new Date();
         nextYear.setFullYear(nextYear.getFullYear() + 1);
         const expiresStr = nextYear.toISOString().slice(0, 10);
-        toast.success(`Training updated for ${rec.employee}`);
+        toast.success(`Certification ${id} renewed successfully!`);
         return {
-          ...rec,
+          ...c,
           status: 'Valid',
-          completed: new Date().toISOString().slice(0, 10),
+          issued: new Date().toISOString().slice(0, 10),
           expires: expiresStr
         };
       }
-      return rec;
+      return c;
     }));
   };
 
-  const filtered = records.filter(r =>
-    r.type.toLowerCase().includes(search.toLowerCase()) ||
-    r.employee.toLowerCase().includes(search.toLowerCase()) ||
-    r.id.toLowerCase().includes(search.toLowerCase())
+  const filtered = certs.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.employee.toLowerCase().includes(search.toLowerCase()) ||
+    c.id.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -102,24 +102,24 @@ export function SafetyPage({ user }: { user: User }) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />Safety Compliance
+            <BookOpen className="h-5 w-5 text-primary" />Certifications
           </h1>
-          <p className="text-sm text-muted-foreground">Safety training records and certification management</p>
+          <p className="text-sm text-muted-foreground">Manage welder qualifications, OSHA compliance and vehicle licenses</p>
         </div>
         <button
           onClick={() => setShowNew(true)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand"
         >
-          <Plus className="h-4 w-4" />Add Record
+          <Plus className="h-4 w-4" />Register Certificate
         </button>
       </div>
 
-      {/* Analytics widgets */}
+      {/* Analytics Summary */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Valid Induction logs', value: records.filter(r => r.status === 'Valid').length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-          { label: 'Expiring Soon', value: records.filter(r => r.status === 'Expiring Soon').length, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-          { label: 'Expired Training', value: records.filter(r => r.status === 'Expired').length, color: 'text-red-500', bg: 'bg-red-500/10' }
+          { label: 'Active Valid', value: certs.filter(c => c.status === 'Valid').length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { label: 'Expiring Soon', value: certs.filter(c => c.status === 'Expiring Soon').length, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+          { label: 'Expired Licenses', value: certs.filter(c => c.status === 'Expired').length, color: 'text-red-500', bg: 'bg-red-500/10' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center border border-border/20`}>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -134,7 +134,7 @@ export function SafetyPage({ user }: { user: User }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search by ID, training type or employee..."
+            placeholder="Search by ID, certificate title or employee..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-muted border border-border rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary"
@@ -142,61 +142,68 @@ export function SafetyPage({ user }: { user: User }) {
         </div>
       </div>
 
+      {/* Certifications Table */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs text-muted-foreground">
               <tr>
-                {['ID', 'Training Type', 'Employee', 'Department', 'Completed', 'Expires', 'Status', 'Actions'].map(h => (
+                {['ID', 'Certificate Type', 'Employee', 'Department', 'Issued', 'Expires', 'Status', 'Actions'].map(h => (
                   <th key={h} className="text-left px-5 py-3 font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map(r => (
-                <tr key={r.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">{r.id}</td>
-                  <td className="px-5 py-3.5 text-xs font-semibold text-foreground">{r.type}</td>
-                  <td className="px-5 py-3.5 text-xs text-muted-foreground">{r.employee}</td>
-                  <td className="px-5 py-3.5 text-xs text-muted-foreground">{r.dept}</td>
-                  <td className="px-5 py-3.5 text-xs text-muted-foreground">{r.completed}</td>
-                  <td className="px-5 py-3.5 text-xs text-muted-foreground">{r.expires}</td>
-                  <td className="px-5 py-3.5">
-                    <StatusBadge variant={r.status === 'Valid' ? 'success' : r.status === 'Expiring Soon' ? 'warning' : 'error'} size="sm">
-                      {r.status}
-                    </StatusBadge>
-                  </td>
-                  <td className="px-5 py-3.5 text-xs">
-                    <div className="flex gap-2">
-                      {r.status !== 'Valid' && (
-                        <button
-                          onClick={() => handleRenew(r.id)}
-                          className="text-primary hover:underline font-bold"
-                        >
-                          Renew
-                        </button>
-                      )}
-                      <button
-                        onClick={() => toast.info(`Viewing induction log: ${r.id}`)}
-                        className="text-muted-foreground hover:text-foreground hover:underline font-semibold"
-                      >
-                        View
-                      </button>
-                    </div>
-                  </td>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-6 text-muted-foreground">No certifications matching query.</td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map(c => (
+                  <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground font-semibold">{c.id}</td>
+                    <td className="px-5 py-3.5 text-xs font-semibold text-foreground">{c.name}</td>
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground">{c.employee}</td>
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground">{c.dept}</td>
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground">{c.issued}</td>
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground">{c.expires}</td>
+                    <td className="px-5 py-3.5">
+                      <StatusBadge variant={c.status === 'Valid' ? 'success' : c.status === 'Expiring Soon' ? 'warning' : 'error'} size="sm">
+                        {c.status}
+                      </StatusBadge>
+                    </td>
+                    <td className="px-5 py-3.5 text-xs">
+                      <div className="flex gap-2">
+                        {c.status !== 'Valid' && (
+                          <button
+                            onClick={() => handleRenew(c.id)}
+                            className="text-primary hover:underline font-bold"
+                          >
+                            Renew License
+                          </button>
+                        )}
+                        <button
+                          onClick={() => toast.info(`File details for ${c.id}: Certified on ${c.issued}`)}
+                          className="text-muted-foreground hover:text-foreground hover:underline font-semibold"
+                        >
+                          View
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Add Safety Record Modal */}
+      {/* Create Modal */}
       {showNew && createPortal(
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-bold text-foreground">Log Safety Certificate</h3>
+              <h3 className="font-bold text-foreground">Register Certification</h3>
               <button onClick={() => setShowNew(false)} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
                 <X className="h-5 w-5" />
               </button>
@@ -204,13 +211,13 @@ export function SafetyPage({ user }: { user: User }) {
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Training Program / Course Name *</label>
+                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Certification Title *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Hazardous Materials Handling"
-                    value={type}
-                    onChange={e => setType(e.target.value)}
+                    placeholder="e.g. AWS D1.1 Welding Standard"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none"
                   />
                 </div>
@@ -219,7 +226,7 @@ export function SafetyPage({ user }: { user: User }) {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Sara Liu"
+                    placeholder="e.g. Chris Okafor"
                     value={employee}
                     onChange={e => setEmployee(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none"
@@ -243,13 +250,13 @@ export function SafetyPage({ user }: { user: User }) {
                   <input
                     type="date"
                     required
-                    value={completed}
-                    onChange={e => setCompleted(e.target.value)}
+                    value={issued}
+                    onChange={e => setIssued(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Expiry Date *</label>
+                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Expiration Date *</label>
                   <input
                     type="date"
                     required
@@ -272,7 +279,7 @@ export function SafetyPage({ user }: { user: User }) {
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90"
                 >
-                  Log Record
+                  Register
                 </button>
               </div>
             </form>
