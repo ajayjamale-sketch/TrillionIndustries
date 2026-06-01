@@ -21,10 +21,9 @@ export function Navbar() {
   const navigate = useNavigate();
 
   const isDashboard = location.pathname.startsWith('/dashboard');
-  // Hero is always a fixed dark background (#0c1220) regardless of theme
   const isHomePage = location.pathname === '/';
-  // On home page, use white text until user scrolls past the hero
-  const onDarkBg = isHomePage && !isScrolled;
+  // Hero section is adaptive to light mode now, so we don't need fixed dark text logic.
+  const onDarkBg = false;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 60);
