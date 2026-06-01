@@ -14,7 +14,8 @@ export function GSTPage({ user }: { user: User }) {
   return (
     <div className="p-6 space-y-5 max-w-[1200px]">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div><h1 className="text-xl font-bold text-foreground flex items-center gap-2"><FileText className="h-5 w-5" />GST & Tax Management</h1><p className="text-sm text-muted-foreground">Manage GST returns and tax compliance</p></div>
+        <div><h1 className="text-xl font-bold text-foreground flex items-center gap-2"><FileText className="h-5 w-5" />
+        </h1><p className="text-sm text-muted-foreground">Manage GST returns and tax compliance</p></div>
         <button onClick={() => toast.success('New GST return initiated')} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand"><Plus className="h-4 w-4" />File Return</button>
       </div>
       <div className="grid grid-cols-3 gap-4">

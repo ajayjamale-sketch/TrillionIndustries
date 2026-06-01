@@ -78,8 +78,11 @@ import { QualityReportsPage } from '@/pages/dashboard/QualityReportsPage';
 import { SupplierProfilePage } from '@/pages/dashboard/SupplierProfilePage';
 import { ProductListingsPage } from '@/pages/dashboard/ProductListingsPage';
 import { SupplierOrdersPage } from '@/pages/dashboard/SupplierOrdersPage';
+import { SupplierFulfillmentPage } from '@/pages/dashboard/SupplierFulfillmentPage';
+import { SupplierTrackingPage } from '@/pages/dashboard/SupplierTrackingPage';
 import { SupplierContractsPage } from '@/pages/dashboard/SupplierContractsPage';
 import { PaymentsPage } from '@/pages/dashboard/PaymentsPage';
+import { SupplierPerformancePage } from '@/pages/dashboard/SupplierPerformancePage';
 
 import { BudgetPage } from '@/pages/dashboard/BudgetPage';
 import { GSTPage } from '@/pages/dashboard/GSTPage';
@@ -566,10 +569,13 @@ function getDashboardSubPage(path: string, user: NonNullable<ReturnType<typeof u
 
   // Supplier
   if (path === '/dashboard/supplier/profile') return <SupplierProfilePage user={user} />;
-  if (path === '/dashboard/supplier/products' || path === '/dashboard/supplier/add-product') return <ProductListingsPage user={user} />;
-  if (path === '/dashboard/supplier/orders' || path === '/dashboard/supplier/fulfillment' || path === '/dashboard/supplier/tracking') return <SupplierOrdersPage user={user} />;
+  if (path === '/dashboard/supplier/products' || path === '/dashboard/supplier/add-product') return <ProductListingsPage user={user} path={path} />;
+  if (path === '/dashboard/supplier/orders') return <SupplierOrdersPage user={user} />;
+  if (path === '/dashboard/supplier/fulfillment') return <SupplierFulfillmentPage user={user} />;
+  if (path === '/dashboard/supplier/tracking') return <SupplierTrackingPage user={user} />;
   if (path === '/dashboard/supplier/contracts') return <SupplierContractsPage user={user} />;
-  if (path === '/dashboard/supplier/payments' || path === '/dashboard/supplier/performance') return <PaymentsPage user={user} />;
+  if (path === '/dashboard/supplier/payments') return <PaymentsPage user={user} />;
+  if (path === '/dashboard/supplier/performance') return <SupplierPerformancePage user={user} />;
 
   // Finance
   if (path === '/dashboard/finance/budget') return <BudgetPage user={user} />;
