@@ -10,19 +10,115 @@ import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from '@/constants';
 import { getInitials } from '@/lib/utils';
 
+// Notification type
+interface Notification {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  unread: boolean;
+  link?: string;
+  timestamp: number; // for sorting
+}
+
+// Helper to format relative time (e.g., "5m ago")
+const formatRelativeTime = (timestamp: number): string => {
+  const diff = Date.now() - timestamp;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return 'Just now';
+};
+
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { theme, toggleTheme } = useThemeContext();
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: '1',
+      title: 'New Order Received',
+      description: 'Order #4829 from Acme Corp.',
+      time: '5m ago',
+      unread: true,
+      timestamp: Date.now() - 5 * 60 * 1000,
+      link: '/dashboard/orders/4829'
+    },
+    {
+      id: '2',
+      title: 'System Update',
+      description: 'Maintenance scheduled for tonight at 2 AM.',
+      time: '2h ago',
+      unread: true,
+      timestamp: Date.now() - 2 * 60 * 60 * 1000,
+      link: '/dashboard/system'
+    },
+    {
+      id: '3',
+      title: 'Payment Confirmed',
+      description: 'Invoice #INV-293 has been paid.',
+      time: '1d ago',
+      unread: false,
+      timestamp: Date.now() - 24 * 60 * 60 * 1000,
+      link: '/dashboard/payments'
+    },
+  ]);
+
+  // Mark a single notification as read
+  const markAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === id ? { ...n, unread: false } : n
+      )
+    );
+  };
+
+  // Mark all notifications as read
+  const markAllRead = () => {
+    setNotifications(prev =>
+      prev.map(n => ({ ...n, unread: false }))
+    );
+  };
+
+  // Add a new notification (for demo / external calls)
+  const addNotification = (title: string, description: string, link?: string) => {
+    const newNotif: Notification = {
+      id: Date.now().toString(),
+      title,
+      description,
+      time: 'Just now',
+      unread: true,
+      timestamp: Date.now(),
+      link,
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  // Optional: expose addNotification to window for testing (remove in production)
+  useEffect(() => {
+    // For demo purposes: simulate a new notification every 30 seconds (disabled by default, uncomment to test)
+    // const interval = setInterval(() => {
+    //   addNotification('Reminder', 'You have a pending task to review.', '/dashboard/tasks');
+    // }, 30000);
+    // return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   const isDashboard = location.pathname.startsWith('/dashboard');
   const isHomePage = location.pathname === '/';
-  // Hero section is adaptive to light mode now, so we don't need fixed dark text logic.
   const onDarkBg = false;
 
   useEffect(() => {
@@ -35,11 +131,23 @@ export function Navbar() {
     setMobileOpen(false);
     setActiveDropdown(null);
     setUserMenuOpen(false);
+    setNotificationsOpen(false);
   }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  // Handle notification click: mark as read and navigate if link provided
+  const handleNotificationClick = (notif: Notification) => {
+    if (notif.unread) {
+      markAsRead(notif.id);
+    }
+    setNotificationsOpen(false);
+    if (notif.link) {
+      navigate(notif.link);
+    }
   };
 
   if (isDashboard) return null;
@@ -139,17 +247,85 @@ export function Navbar() {
 
             {isAuthenticated && user ? (
               <>
-                <button className={cn(
-                  'p-2 rounded-lg transition-colors relative',
-                  onDarkBg ? 'text-gray-300 hover:text-white hover:bg-white/8' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                )}>
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-accent rounded-full" />
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      setNotificationsOpen(!notificationsOpen);
+                      setUserMenuOpen(false);
+                    }}
+                    className={cn(
+                    'p-2 rounded-lg transition-colors relative',
+                    onDarkBg ? 'text-gray-300 hover:text-white hover:bg-white/8' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}>
+                    <Bell className="h-4 w-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 w-4 h-4 bg-accent rounded-full text-[10px] flex items-center justify-center text-white font-bold">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notificationsOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-popover border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                        <h3 className="font-bold text-sm text-foreground">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={markAllRead} 
+                            className="text-xs text-primary font-medium hover:underline"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-[360px] overflow-y-auto divide-y divide-border">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+                            No notifications
+                          </div>
+                        ) : (
+                          notifications.map(notif => (
+                            <div 
+                              key={notif.id} 
+                              onClick={() => handleNotificationClick(notif)}
+                              className={cn(
+                                "px-4 py-3 hover:bg-muted transition-colors cursor-pointer",
+                                notif.unread ? "bg-primary/5" : ""
+                              )}
+                            >
+                              <div className="flex justify-between items-start mb-0.5">
+                                <p className="text-sm font-semibold text-foreground">{notif.title}</p>
+                                {notif.unread && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">{notif.description}</p>
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {formatRelativeTime(notif.timestamp)}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="p-2 border-t border-border">
+                        <Link 
+                          to="/dashboard/notifications" 
+                          className="block text-center text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted py-1.5 rounded-lg transition-colors"
+                          onClick={() => setNotificationsOpen(false)}
+                        >
+                          View all notifications
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="relative">
                   <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    onClick={() => {
+                      setUserMenuOpen(!userMenuOpen);
+                      setNotificationsOpen(false);
+                    }}
                     className={cn('flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl transition-colors', onDarkBg ? 'hover:bg-white/8' : 'hover:bg-muted')}
                   >
                     {user.avatar ? (

@@ -18,9 +18,47 @@ const ICON_MAP: Record<string, any> = {
 
 const CATEGORY_GROUPS = ['Core', 'Operations', 'Intelligence', 'Commerce', 'Security'];
 
+// Default commerce features to use if FEATURES_LIST has none for 'Commerce'
+const DEFAULT_COMMERCE_FEATURES = [
+  {
+    id: 'commerce-b2b',
+    title: 'B2B Marketplace',
+    description: 'Connect with verified industrial buyers and suppliers. List products, manage RFQs, and automate procurement workflows.',
+    icon: 'Store',
+    category: 'Commerce',
+    highlights: ['Product catalog management', 'Automated RFQ responses', 'Supplier scoring & reviews']
+  },
+  {
+    id: 'commerce-procurement',
+    title: 'Smart Procurement',
+    description: 'AI-driven sourcing and purchase order automation. Reduce costs with smart vendor recommendations.',
+    icon: 'ShoppingCart',
+    category: 'Commerce',
+    highlights: ['Purchase order automation', 'Vendor performance analytics', 'Contract lifecycle management']
+  },
+  {
+    id: 'commerce-invoicing',
+    title: 'Digital Invoicing & Payments',
+    description: 'End-to-end invoicing, payment reconciliation, and financial controls integrated with your ERP.',
+    icon: 'DollarSign',
+    category: 'Commerce',
+    highlights: ['Automated invoice generation', 'Multi-currency support', 'Secure payment gateway']
+  }
+];
+
 export default function Features() {
   useScrollTop();
   const { isAuthenticated } = useAuth();
+
+  // Helper to get features for a category, falling back to defaults for Commerce
+  const getFeaturesForCategory = (category: string) => {
+    const features = FEATURES_LIST.filter(f => f.category === category);
+    if (category === 'Commerce' && features.length === 0) {
+      return DEFAULT_COMMERCE_FEATURES;
+    }
+    return features;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -53,7 +91,9 @@ export default function Features() {
         {/* Feature Groups */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
           {CATEGORY_GROUPS.map(category => {
-            const features = FEATURES_LIST.filter(f => f.category === category);
+            const features = getFeaturesForCategory(category);
+            // Skip rendering if no features (shouldn't happen for Commerce now)
+            if (features.length === 0) return null;
             return (
               <div key={category} id={features[0]?.id}>
                 <div className="flex items-center gap-3 mb-8">
@@ -64,6 +104,13 @@ export default function Features() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {features.map(feature => {
                     const Icon = ICON_MAP[feature.icon] || Factory;
+                    // Use feature.highlights if present, otherwise fallback to standard list
+                    const highlights = feature.highlights || [
+                      'Real-time monitoring and alerts',
+                      'AI-powered automation',
+                      'ERP & system integration',
+                      'Role-based access control',
+                    ];
                     return (
                       <div key={feature.id} id={feature.id} className="group bg-card border border-border rounded-2xl p-7 hover:border-primary/40 hover:shadow-brand transition-all duration-300">
                         <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5 group-hover:bg-primary group-hover:border-primary transition-colors">
@@ -72,12 +119,7 @@ export default function Features() {
                         <h3 className="font-bold text-foreground mb-3 text-lg">{feature.title}</h3>
                         <p className="text-muted-foreground text-sm leading-relaxed mb-5">{feature.description}</p>
                         <ul className="space-y-2">
-                          {[
-                            'Real-time monitoring and alerts',
-                            'AI-powered automation',
-                            'ERP & system integration',
-                            'Role-based access control',
-                          ].map(sub => (
+                          {highlights.slice(0, 4).map(sub => (
                             <li key={sub} className="flex items-center gap-2 text-xs text-muted-foreground">
                               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> {sub}
                             </li>

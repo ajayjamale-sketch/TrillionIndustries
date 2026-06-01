@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
 import { getInitials } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Employee {
   id: string;
@@ -37,6 +38,7 @@ export function EmployeesPage({ user }: { user: User }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [viewingEmp, setViewingEmp] = useState<Employee | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -106,9 +108,14 @@ export function EmployeesPage({ user }: { user: User }) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this employee?')) {
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      setEmployees(prev => prev.filter(emp => emp.id !== itemToDelete));
       toast.success('Employee deleted successfully');
+      setItemToDelete(null);
     }
   };
 
@@ -367,6 +374,14 @@ export function EmployeesPage({ user }: { user: User }) {
         </div>,
         document.body
       )}
+
+      <ConfirmDialog
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Employee"
+        description="Are you sure you want to delete this employee? This action cannot be undone."
+      />
     </div>
   );
 }

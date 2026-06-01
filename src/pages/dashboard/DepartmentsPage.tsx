@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Layers, Plus, ChevronRight, Users, Edit, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { User } from '@/types';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Department {
   id: string;
@@ -27,6 +28,7 @@ export function DepartmentsPage({ user }: { user: User }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -92,10 +94,15 @@ export function DepartmentsPage({ user }: { user: User }) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this department?')) {
-      setDepartments(prev => prev.filter(d => d.id !== id));
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      setDepartments(prev => prev.filter(d => d.id !== itemToDelete));
       toast.success('Department deleted successfully');
-      if (expanded === id) setExpanded(null);
+      if (expanded === itemToDelete) setExpanded(null);
+      setItemToDelete(null);
     }
   };
 
@@ -250,6 +257,14 @@ export function DepartmentsPage({ user }: { user: User }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Department"
+        description="Are you sure you want to delete this department? This action cannot be undone."
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Package, Plus, Edit, Trash2, Search, Eye, X } from 'lucide-react';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Product {
   id: string;
@@ -43,6 +44,7 @@ export function ProductListingsPage({ user, path }: { user: User; path?: string 
   const [search, setSearch] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   useEffect(() => {
     if (path === '/dashboard/supplier/add-product') {
@@ -146,9 +148,14 @@ export function ProductListingsPage({ user, path }: { user: User; path?: string 
 
   // Delete product
   const handleDeleteProduct = (product: Product) => {
-    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
-      setProducts(prev => prev.filter(p => p.id !== product.id));
-      toast.warning(`Product "${product.name}" removed from listing`);
+    setProductToDelete(product);
+  };
+
+  const confirmDelete = () => {
+    if (productToDelete) {
+      setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
+      toast.warning(`Product "${productToDelete.name}" removed from listing`);
+      setProductToDelete(null);
     }
   };
 
@@ -361,6 +368,14 @@ export function ProductListingsPage({ user, path }: { user: User; path?: string 
           </table>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!productToDelete}
+        onClose={() => setProductToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        description={`Are you sure you want to delete "${productToDelete?.name}"? This action cannot be undone.`}
+      />
     </div>
   );
 }

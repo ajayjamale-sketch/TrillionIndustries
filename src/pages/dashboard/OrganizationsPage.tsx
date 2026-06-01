@@ -3,6 +3,7 @@ import { Building2, Plus, Users, Globe, Settings, Network, Trash2, X } from 'luc
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Organization {
   id: string;
@@ -24,6 +25,7 @@ export function OrganizationsPage({ user }: { user: User }) {
   const [organizations, setOrganizations] = useState<Organization[]>(INITIAL_ORGANIZATIONS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -88,9 +90,14 @@ export function OrganizationsPage({ user }: { user: User }) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this organization?')) {
-      setOrganizations(prev => prev.filter(org => org.id !== id));
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      setOrganizations(prev => prev.filter(org => org.id !== itemToDelete));
       toast.success('Organization deleted successfully');
+      setItemToDelete(null);
     }
   };
 
@@ -251,6 +258,14 @@ export function OrganizationsPage({ user }: { user: User }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Organization"
+        description="Are you sure you want to delete this organization? This action cannot be undone."
+      />
     </div>
   );
 }

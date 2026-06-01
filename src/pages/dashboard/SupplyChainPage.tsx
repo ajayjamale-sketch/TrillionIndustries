@@ -8,6 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, 
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Shipment {
   id: string;
@@ -47,6 +48,7 @@ export function SupplyChainPage({ user }: { user: User }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingShipment, setEditingShipment] = useState<Shipment | null>(null);
   const [trackingShipment, setTrackingShipment] = useState<Shipment | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form state
   const [origin, setOrigin] = useState('');
@@ -128,9 +130,14 @@ export function SupplyChainPage({ user }: { user: User }) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm(`Are you sure you want to delete Shipment ${id}?`)) {
-      setShipments(prev => prev.filter(s => s.id !== id));
-      toast.success(`Shipment ${id} removed`);
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      setShipments(prev => prev.filter(s => s.id !== itemToDelete));
+      toast.success(`Shipment ${itemToDelete} removed`);
+      setItemToDelete(null);
     }
   };
 
@@ -562,6 +569,14 @@ export function SupplyChainPage({ user }: { user: User }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Shipment"
+        description={`Are you sure you want to delete Shipment ${itemToDelete}? This action cannot be undone.`}
+      />
     </div>
   );
 }

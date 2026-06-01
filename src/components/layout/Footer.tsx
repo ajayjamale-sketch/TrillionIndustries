@@ -35,13 +35,13 @@ export function Footer() {
               The next-generation AI-powered industrial operating platform. Digitize, optimize, and scale your manufacturing and enterprise operations.
             </p>
             <div className="flex items-center gap-3">
-              <a href="#" aria-label="LinkedIn" className="p-2 rounded-lg bg-white/5 hover:bg-blue-600/20 text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="p-2 rounded-lg bg-white/5 hover:bg-blue-600/20 text-gray-400 hover:text-blue-400 transition-colors">
                 <Linkedin className="h-4 w-4" />
               </a>
-              <a href="#" aria-label="Twitter" className="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-colors">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-400 hover:text-blue-400 transition-colors">
                 <Twitter className="h-4 w-4" />
               </a>
-              <a href="#" aria-label="YouTube" className="p-2 rounded-lg bg-white/5 hover:bg-red-600/20 text-gray-400 hover:text-red-400 transition-colors">
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="p-2 rounded-lg bg-white/5 hover:bg-red-600/20 text-gray-400 hover:text-red-400 transition-colors">
                 <Youtube className="h-4 w-4" />
               </a>
             </div>
@@ -73,14 +73,14 @@ export function Footer() {
             <h4 className="font-semibold text-white text-sm mb-4">Platform</h4>
             <ul className="space-y-2.5">
               {[
-                { label: 'Manufacturing (MES)', href: '/features#mes' },
-                { label: 'Supply Chain', href: '/features#supply-chain' },
-                { label: 'Procurement', href: '/features#procurement' },
-                { label: 'Inventory & Warehouse', href: '/features#inventory' },
-                { label: 'Asset Management', href: '/features#assets' },
-                { label: 'IIoT Integration', href: '/features#iiot' },
-                { label: 'Quality Management', href: '/features#quality' },
-                { label: 'Business Intelligence', href: '/features#bi' },
+                { label: 'Manufacturing (MES)', href: '/features/mes' },
+                { label: 'Supply Chain', href: '/features/supply-chain' },
+                { label: 'Procurement', href: '/features/procurement' },
+                { label: 'Inventory & Warehouse', href: '/features/inventory' },
+                { label: 'Asset Management', href: '/features/assets' },
+                { label: 'IIoT Integration', href: '/features/iiot' },
+                { label: 'Quality Management', href: '/features/quality' },
+                { label: 'Business Intelligence', href: '/features/bi' },
               ].map(item => (
                 <li key={item.label}>
                   <Link to={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">

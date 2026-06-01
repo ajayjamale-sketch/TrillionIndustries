@@ -13,6 +13,16 @@ import Payment from './pages/Payment';
 import Careers from './pages/Careers';
 import Press from './pages/Press';
 import Partners from './pages/Partners';
+
+import MES from './pages/features/MES';
+import SupplyChain from './pages/features/SupplyChain';
+import Procurement from './pages/features/Procurement';
+import Inventory from './pages/features/Inventory';
+import AssetManagement from './pages/features/AssetManagement';
+import IIoTIntegration from './pages/features/IIoTIntegration';
+import QualityManagement from './pages/features/QualityManagement';
+import BusinessIntelligence from './pages/features/BusinessIntelligence';
+
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
@@ -46,6 +56,16 @@ const App = () => (
             <Route path="/careers" element={<Careers />} />
             <Route path="/press" element={<Press />} />
             <Route path="/partners" element={<Partners />} />
+            
+            <Route path="/features/mes" element={<MES />} />
+            <Route path="/features/supply-chain" element={<SupplyChain />} />
+            <Route path="/features/procurement" element={<Procurement />} />
+            <Route path="/features/inventory" element={<Inventory />} />
+            <Route path="/features/assets" element={<AssetManagement />} />
+            <Route path="/features/iiot" element={<IIoTIntegration />} />
+            <Route path="/features/quality" element={<QualityManagement />} />
+            <Route path="/features/bi" element={<BusinessIntelligence />} />
+
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* All dashboard routes — handled internally by Dashboard.tsx */}

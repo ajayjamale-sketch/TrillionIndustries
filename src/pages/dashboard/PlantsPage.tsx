@@ -3,6 +3,7 @@ import { Factory, Plus, MapPin, Users, Settings, Activity, Trash2, X } from 'luc
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Plant {
   id: string;
@@ -26,6 +27,7 @@ export function PlantsPage({ user }: { user: User }) {
   const [plants, setPlants] = useState<Plant[]>(INITIAL_PLANTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlant, setEditingPlant] = useState<Plant | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -94,9 +96,14 @@ export function PlantsPage({ user }: { user: User }) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this plant?')) {
-      setPlants(prev => prev.filter(p => p.id !== id));
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      setPlants(prev => prev.filter(p => p.id !== itemToDelete));
       toast.success('Plant deleted successfully');
+      setItemToDelete(null);
     }
   };
 
@@ -280,6 +287,14 @@ export function PlantsPage({ user }: { user: User }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Plant"
+        description="Are you sure you want to delete this plant? This action cannot be undone."
+      />
     </div>
   );
 }
