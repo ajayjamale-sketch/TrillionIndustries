@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Factory, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, DEMO_USERS, ROLE_LABELS } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useScrollTop } from '@/hooks/useScrollTop';
 
@@ -16,6 +16,20 @@ export default function Login() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(p => ({ ...p, [k]: e.target.value }));
     setErrors(p => ({ ...p, [k]: '' }));
+  };
+
+  const handleDemoLogin = async (email: string) => {
+    const user = DEMO_USERS[email];
+    if (user) {
+      setForm({ email, password: user.password });
+      try {
+        await login(email, user.password);
+        toast.success(`Welcome back, ${user.user.name}`);
+        navigate('/dashboard');
+      } catch (error) {
+        toast.error('Failed to login with demo credentials');
+      }
+    }
   };
 
   const validate = () => {
@@ -41,17 +55,47 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left Visual */}
-      <div className="hidden lg:flex flex-col flex-1 gradient-hero items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
-        <div className="relative max-w-sm space-y-6">
-          <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-brand-lg">
-            <Factory className="h-7 w-7 text-white" />
+      {/* Left Visual - Demo Credentials */}
+      <div className="hidden lg:flex flex-col flex-1 bg-muted/30 border-r border-border p-12 relative overflow-hidden">
+        <div className="relative z-10 w-full max-w-xl mx-auto h-full flex flex-col">
+          <div className="mb-8">
+            <div className="w-12 h-12 rounded-xl gradient-brand flex items-center justify-center shadow-brand-lg mb-6">
+              <Factory className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-3xl font-extrabold text-foreground mb-3">Quick Access Demo</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
+              Select a persona below to instantly bypass the login screen and explore the platform from different role perspectives.
+            </p>
           </div>
-          <h2 className="text-3xl font-extrabold text-white">Welcome back</h2>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            Access your manufacturing dashboard, manage production, and oversee your operations all in one place.
-          </p>
+          
+          <div className="flex-1 overflow-y-auto pr-4 space-y-3 custom-scrollbar">
+            {Object.entries(DEMO_USERS).map(([email, data]) => (
+              <button
+                key={email}
+                type="button"
+                onClick={() => handleDemoLogin(email)}
+                className="w-full flex items-center gap-4 p-4 rounded-xl bg-background border border-border hover:border-primary/50 hover:shadow-md transition-all text-left group"
+              >
+                <img src={data.user.avatar} alt={data.user.name} className="w-12 h-12 rounded-full object-cover border border-border group-hover:border-primary/50 transition-colors" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-bold text-foreground truncate">{data.user.name}</p>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+                      {ROLE_LABELS[data.user.role as keyof typeof ROLE_LABELS]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="truncate">{email}</span>
+                    <span className="w-1 h-1 rounded-full bg-border" />
+                    <span>Pass: {data.password}</span>
+                  </div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                  <ArrowRight className="h-4 w-4 text-primary" />
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

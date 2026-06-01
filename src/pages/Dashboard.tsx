@@ -24,6 +24,9 @@ import { ReportsPage } from '@/pages/dashboard/ReportsPage';
 import { HelpPage } from '@/pages/dashboard/HelpPage';
 import { SupportPage } from '@/pages/dashboard/SupportPage';
 import { DashboardSettingsPage } from '@/pages/dashboard/DashboardSettingsPage';
+import { SupplyChainPage } from '@/pages/dashboard/SupplyChainPage';
+import { IIoTPage } from '@/pages/dashboard/IIoTPage';
+import { MarketplacePage } from '@/pages/dashboard/MarketplacePage';
 
 // Role-specific module pages
 import { OrganizationsPage } from '@/pages/dashboard/OrganizationsPage';
@@ -428,7 +431,19 @@ function useDashboardPage(user: NonNullable<ReturnType<typeof useAuth>['user']>)
   if (path === '/dashboard/admin/analytics') return <PlatformAnalyticsPage user={user} />;
   if (path === '/dashboard/admin/health' || path === '/dashboard/admin/compliance') return <SystemHealthPage user={user} />;
 
-  // Role main dashboards (also handles /dashboard/production, /dashboard/supply-chain, etc.)
+  // Enterprise Admin Top-Level Domains
+  if (path === '/dashboard/production') return <ProductionDashboard user={user} />;
+  if (path === '/dashboard/supply-chain') return <SupplyChainPage user={user} />;
+  if (path === '/dashboard/procurement') return <ProcurementDashboard user={user} />;
+  if (path === '/dashboard/inventory') return <WarehouseDashboard user={user} />;
+  if (path === '/dashboard/assets') return <MaintenanceDashboard user={user} />;
+  if (path === '/dashboard/workforce') return <WorkforceDashboard user={user} />;
+  if (path === '/dashboard/iiot') return <IIoTPage user={user} />;
+  if (path === '/dashboard/quality') return <QualityDashboard user={user} />;
+  if (path === '/dashboard/finance') return <FinanceDashboard user={user} />;
+  if (path === '/dashboard/marketplace') return <MarketplacePage user={user} />;
+
+  // Role main dashboards
   return null;
 }
 

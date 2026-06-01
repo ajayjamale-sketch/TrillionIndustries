@@ -402,22 +402,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 h-[60px] border-b border-sidebar-border shrink-0">
+        <Link to="/" className="flex items-center gap-2.5 px-4 h-[60px] border-b border-sidebar-border shrink-0 hover:bg-sidebar-accent transition-colors">
           <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center shadow-brand shrink-0">
             <Factory className="h-4 w-4 text-white" />
           </div>
           {expanded && (
-            <span className="font-bold text-[15px] text-white tracking-tight whitespace-nowrap overflow-hidden">
-              Trillion<span className="text-blue-400">Industries</span>
+            <span className="font-bold text-[15px] text-sidebar-foreground tracking-tight whitespace-nowrap overflow-hidden">
+              Trillion<span className="text-sidebar-primary">Industries</span>
             </span>
           )}
-        </div>
+        </Link>
 
         {/* User Role Badge */}
         {expanded && user && (
           <div className="mx-3 mt-3 mb-1 px-3 py-2 rounded-xl bg-sidebar-accent border border-sidebar-border">
-            <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Signed in as</p>
-            <p className="text-xs font-bold text-white mt-0.5 truncate">{ROLE_LABELS[user.role]}</p>
+            <p className="text-[10px] font-semibold text-sidebar-primary uppercase tracking-wider">Signed in as</p>
+            <p className="text-xs font-bold text-sidebar-foreground mt-0.5 truncate">{ROLE_LABELS[user.role]}</p>
           </div>
         )}
 
@@ -443,18 +443,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       className={cn(
                         'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative',
                         active
-                          ? 'bg-blue-600/20 text-white'
-                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-white'
+                          ? 'bg-sidebar-primary/15 text-sidebar-primary font-medium'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
                     >
-                      <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-blue-400' : 'text-sidebar-foreground/60 group-hover:text-white')} />
+                      <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-sidebar-primary' : 'text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground')} />
                       {expanded && (
                         <>
                           <span className="text-sm flex-1 truncate">{item.label}</span>
                           {item.badge && (
-                            <span className="text-[10px] font-bold bg-accent text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{item.badge}</span>
+                            <span className="text-[10px] font-bold bg-sidebar-primary text-sidebar-primary-foreground rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{item.badge}</span>
                           )}
-                          {active && <span className="w-1 h-4 rounded-full bg-blue-400 absolute right-2" />}
+                          {active && <span className="w-1 h-4 rounded-full bg-sidebar-primary absolute right-2" />}
                         </>
                       )}
                     </Link>
@@ -479,13 +479,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       onClick={() => mobile && setMobileSidebarOpen(false)}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group',
-                        active ? 'bg-blue-600/20 text-white' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-white'
+                        active ? 'bg-sidebar-primary/15 text-sidebar-primary font-medium' : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
                     >
-                      <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-blue-400' : 'text-sidebar-foreground/60 group-hover:text-white')} />
+                      <Icon className={cn('h-[18px] w-[18px] shrink-0', active ? 'text-sidebar-primary' : 'text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground')} />
                       <span className="text-sm flex-1 truncate">{item.label}</span>
                       {item.badge && (
-                        <span className="text-[10px] font-bold bg-accent text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{item.badge}</span>
+                        <span className="text-[10px] font-bold bg-sidebar-primary text-sidebar-primary-foreground rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{item.badge}</span>
                       )}
                     </Link>
                   );
@@ -499,7 +499,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 const Icon = item.icon;
                 return (
                   <Link key={item.href} to={item.href} title={item.label}
-                    className="flex items-center justify-center py-2.5 rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-white transition-colors relative">
+                    className="flex items-center justify-center py-2.5 rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors relative">
                     <Icon className="h-[18px] w-[18px]" />
                     {item.badge && <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />}
                   </Link>
@@ -523,7 +523,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                  <p className="text-xs font-semibold text-sidebar-foreground truncate">{user.name}</p>
                   <p className="text-[11px] text-sidebar-foreground/50 truncate">{user.email}</p>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleLogout(); }}
