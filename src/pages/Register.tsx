@@ -61,9 +61,9 @@ export default function Register() {
   })();
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen w-screen bg-background flex overflow-hidden">
       {/* Left Visual */}
-      <div className="hidden lg:flex flex-col flex-1 gradient-hero items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex flex-col flex-1 gradient-hero items-center justify-center p-12 relative overflow-hidden h-full">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
         <div className="relative max-w-sm space-y-6">
           <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-brand-lg">

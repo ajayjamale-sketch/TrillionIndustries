@@ -1,14 +1,41 @@
 import { useState } from 'react';
 import {
   Package, TrendingUp, TrendingDown, Plus, Download, Search,
-  ArrowRight, RefreshCw, AlertTriangle, CheckCircle2, Truck, BarChart3
+  ArrowRight, RefreshCw, AlertTriangle, CheckCircle2, Truck, BarChart3, X, Edit
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
 
-const stockData = [
+interface InventoryItem {
+  sku: string;
+  name: string;
+  location: string;
+  qty: number;
+  min: number;
+  unit: string;
+  status: string;
+}
+
+interface Movement {
+  ref: string;
+  type: string;
+  item: string;
+  qty: string;
+  from: string;
+  time: string;
+}
+
+interface Transfer {
+  id: string;
+  from: string;
+  to: string;
+  items: number;
+  status: string;
+}
+
+const INITIAL_STOCK_DATA = [
   { category: 'Steel', current: 840, min: 200, max: 1200 },
   { category: 'Hydraulic', current: 120, min: 150, max: 400 },
   { category: 'Bearings', current: 650, min: 300, max: 1000 },
@@ -16,7 +43,7 @@ const stockData = [
   { category: 'Seals', current: 180, min: 200, max: 600 },
 ];
 
-const INVENTORY_ITEMS = [
+const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
   { sku: 'STL-3012', name: 'Steel Rod 30mm', location: 'A-12-3', qty: 840, min: 200, unit: 'pieces', status: 'Normal' },
   { sku: 'HYD-8821', name: 'Hydraulic Seal Kit', location: 'B-04-1', qty: 120, min: 150, unit: 'sets', status: 'Low' },
   { sku: 'BRG-4401', name: 'Ball Bearing 40mm', location: 'C-08-2', qty: 650, min: 300, unit: 'pieces', status: 'Normal' },
@@ -25,20 +52,190 @@ const INVENTORY_ITEMS = [
   { sku: 'VLV-0091', name: 'Check Valve 1/2"', location: 'E-03-1', qty: 45, min: 50, unit: 'pieces', status: 'Critical' },
 ];
 
-const RECENT_MOVEMENTS = [
+const INITIAL_RECENT_MOVEMENTS: Movement[] = [
   { ref: 'GR-5521', type: 'Goods Receipt', item: 'Steel Rod 30mm', qty: '+500', from: 'Supplier', time: '2 hrs ago' },
   { ref: 'IS-3342', type: 'Issue to Production', item: 'Hydraulic Seal Kit', qty: '-30', from: 'Warehouse A', time: '4 hrs ago' },
   { ref: 'TR-1192', type: 'Transfer', item: 'Ball Bearing 40mm', qty: '200', from: 'A→B', time: '6 hrs ago' },
   { ref: 'GR-5522', type: 'Goods Receipt', item: 'O-Ring Seal 25mm', qty: '+150', from: 'Supplier', time: '8 hrs ago' },
 ];
 
+const INITIAL_TRANSFERS: Transfer[] = [
+  { id: 'ST-441', from: 'Warehouse A', to: 'Production Floor', items: 3, status: 'In Transit' },
+  { id: 'ST-442', from: 'Receiving Dock', to: 'Warehouse B', items: 8, status: 'Pending' },
+  { id: 'ST-443', from: 'Warehouse B', to: 'Quality Lab', items: 1, status: 'Completed' },
+];
+
 export function WarehouseDashboard({ user }: { user: User }) {
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_INVENTORY_ITEMS);
+  const [movements, setMovements] = useState<Movement[]>(INITIAL_RECENT_MOVEMENTS);
+  const [transfers, setTransfers] = useState<Transfer[]>(INITIAL_TRANSFERS);
+  
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'stock' | 'movements' | 'transfers'>('stock');
 
-  const filtered = INVENTORY_ITEMS.filter(i =>
-    i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.includes(search.toUpperCase())
+  // Modals state
+  const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+
+  // Form states
+  const [itemName, setItemName] = useState('');
+  const [itemSKU, setItemSKU] = useState('');
+  const [itemLoc, setItemLoc] = useState('');
+  const [itemQty, setItemQty] = useState(0);
+  const [itemMin, setItemMin] = useState(100);
+  const [itemUnit, setItemUnit] = useState('pieces');
+
+  const [tFrom, setTFrom] = useState('Warehouse A');
+  const [tTo, setTTo] = useState('Production Floor');
+  const [tCount, setTCount] = useState(1);
+
+  const filtered = inventoryItems.filter(i =>
+    i.name.toLowerCase().includes(search.toLowerCase()) || i.sku.toLowerCase().includes(search.toLowerCase())
   );
+
+  const getStatus = (qty: number, min: number) => {
+    if (qty <= min / 2) return 'Critical';
+    if (qty < min) return 'Low';
+    if (qty > min * 5) return 'Overstock';
+    return 'Normal';
+  };
+
+  const handleReceiveGoods = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!itemName.trim() || !itemSKU.trim() || !itemLoc.trim() || itemQty <= 0) {
+      toast.error('Please enter all required fields');
+      return;
+    }
+
+    const skuUpper = itemSKU.toUpperCase();
+    const existing = inventoryItems.find(i => i.sku === skuUpper);
+
+    if (existing) {
+      setInventoryItems(prev =>
+        prev.map(i =>
+          i.sku === skuUpper
+            ? { ...i, qty: i.qty + itemQty, status: getStatus(i.qty + itemQty, i.min) }
+            : i
+        )
+      );
+      toast.success(`Received ${itemQty} ${itemUnit} for existing item: ${existing.name}`);
+    } else {
+      const newItem: InventoryItem = {
+        sku: skuUpper,
+        name: itemName,
+        location: itemLoc,
+        qty: itemQty,
+        min: itemMin,
+        unit: itemUnit,
+        status: getStatus(itemQty, itemMin),
+      };
+      setInventoryItems(prev => [...prev, newItem]);
+      toast.success(`Registered and received new SKU: ${skuUpper}`);
+    }
+
+    // Add movement
+    const newMovement: Movement = {
+      ref: `GR-${5520 + movements.length + 5}`,
+      type: 'Goods Receipt',
+      item: existing ? existing.name : itemName,
+      qty: `+${itemQty}`,
+      from: 'Supplier',
+      time: 'Just now'
+    };
+    setMovements(prev => [newMovement, ...prev]);
+    setIsReceiveModalOpen(false);
+  };
+
+  const handleTransferStock = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newTransfer: Transfer = {
+      id: `ST-${440 + transfers.length + 5}`,
+      from: tFrom,
+      to: tTo,
+      items: tCount,
+      status: 'Pending'
+    };
+    setTransfers(prev => [newTransfer, ...prev]);
+    
+    // Add movement logs
+    const newMovement: Movement = {
+      ref: `TR-${1190 + movements.length + 5}`,
+      type: 'Transfer',
+      item: `${tCount} items`,
+      qty: `${tCount}`,
+      from: `${tFrom.slice(-1)}→${tTo.slice(-1)}`,
+      time: 'Just now'
+    };
+    setMovements(prev => [newMovement, ...prev]);
+    setIsTransferModalOpen(false);
+    toast.success(`Transfer ${newTransfer.id} scheduled successfully`);
+  };
+
+  const handleAdjustStock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
+
+    setInventoryItems(prev =>
+      prev.map(i =>
+        i.sku === selectedItem.sku
+          ? { ...i, qty: itemQty, status: getStatus(itemQty, i.min) }
+          : i
+      )
+    );
+
+    const diff = itemQty - selectedItem.qty;
+    if (diff !== 0) {
+      const newMovement: Movement = {
+        ref: `AD-${8820 + movements.length + 5}`,
+        type: 'Stock Adjustment',
+        item: selectedItem.name,
+        qty: diff > 0 ? `+${diff}` : `${diff}`,
+        from: 'System Override',
+        time: 'Just now'
+      };
+      setMovements(prev => [newMovement, ...prev]);
+    }
+
+    setIsAdjustModalOpen(false);
+    toast.success(`Stock level for ${selectedItem.name} adjusted`);
+  };
+
+  const handleReorder = (item: InventoryItem) => {
+    const amount = 500;
+    setInventoryItems(prev =>
+      prev.map(i =>
+        i.sku === item.sku
+          ? { ...i, qty: i.qty + amount, status: getStatus(i.qty + amount, i.min) }
+          : i
+      )
+    );
+
+    const newMovement: Movement = {
+      ref: `GR-${5520 + movements.length + 5}`,
+      type: 'Goods Receipt (Reorder)',
+      item: item.name,
+      qty: `+${amount}`,
+      from: 'Supplier Order',
+      time: 'Just now'
+    };
+    setMovements(prev => [newMovement, ...prev]);
+    toast.success(`Submitted reorder for 500 ${item.unit} of ${item.name}`);
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(inventoryItems, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory_stock_report_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success('Inventory report exported');
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px]">
@@ -50,31 +247,59 @@ export function WarehouseDashboard({ user }: { user: User }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => toast.success('New Goods Receipt recorded')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand">
+          <button 
+            type="button"
+            onClick={() => {
+              setItemName('');
+              setItemSKU('');
+              setItemLoc('A-12-1');
+              setItemQty(0);
+              setItemMin(100);
+              setItemUnit('pieces');
+              setIsReceiveModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand"
+          >
             <Plus className="h-4 w-4" />Receive Goods
           </button>
-          <button onClick={() => toast.info('Stock transfer initiated')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border hover:bg-muted text-sm transition-colors">
+          <button 
+            type="button"
+            onClick={() => {
+              setTFrom('Warehouse A');
+              setTTo('Production Floor');
+              setTCount(1);
+              setIsTransferModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border hover:bg-muted text-sm transition-colors"
+          >
             <Truck className="h-4 w-4" />Transfer Stock
           </button>
-          <button onClick={() => toast.info('Downloading inventory report')}
-            className="p-2 rounded-xl border border-border hover:bg-muted transition-colors">
+          <button 
+            type="button"
+            onClick={handleExport}
+            className="p-2 rounded-xl border border-border hover:bg-muted transition-colors"
+          >
             <Download className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
       </div>
 
       {/* Alerts for low stock */}
-      {INVENTORY_ITEMS.filter(i => i.status === 'Low' || i.status === 'Critical').length > 0 && (
+      {inventoryItems.filter(i => i.status === 'Low' || i.status === 'Critical').length > 0 && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
           <p className="text-sm text-amber-700 dark:text-amber-400">
-            <span className="font-semibold">{INVENTORY_ITEMS.filter(i => i.status === 'Low' || i.status === 'Critical').length} items</span> are below minimum stock levels. Review and initiate replenishment orders.
+            <span className="font-semibold">{inventoryItems.filter(i => i.status === 'Low' || i.status === 'Critical').length} items</span> are below minimum stock levels. Review and initiate replenishment orders.
           </p>
-          <button onClick={() => toast.info('Opening reorder suggestions')}
-            className="ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors">
-            Reorder Now
+          <button 
+            type="button"
+            onClick={() => {
+              const items = inventoryItems.filter(i => i.status === 'Low' || i.status === 'Critical');
+              items.forEach(i => handleReorder(i));
+            }}
+            className="ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-colors"
+          >
+            Reorder All Low
           </button>
         </div>
       )}
@@ -82,9 +307,9 @@ export function WarehouseDashboard({ user }: { user: User }) {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total SKUs', value: '4,821', change: '+12 this week', icon: Package, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+          { label: 'Total SKUs', value: `${inventoryItems.length}`, change: 'Active Items', icon: Package, color: 'text-blue-500', bg: 'bg-blue-500/10' },
           { label: 'Inventory Value', value: '$2.1M', change: '-$84K vs last month', icon: BarChart3, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-          { label: 'Low Stock Alerts', value: '3', change: 'Requires attention', icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+          { label: 'Low Stock Alerts', value: `${inventoryItems.filter(i => i.status === 'Low' || i.status === 'Critical').length}`, change: 'Requires attention', icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           { label: 'Pending Receipts', value: '8', change: '2 arriving today', icon: Truck, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         ].map(m => {
           const Icon = m.icon;
@@ -108,12 +333,12 @@ export function WarehouseDashboard({ user }: { user: User }) {
       <div className="bg-card border border-border rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-foreground text-sm">Stock Levels by Category</h3>
-          <button onClick={() => toast.info('Viewing full stock analysis')} className="text-xs text-primary hover:underline flex items-center gap-1">
+          <button type="button" onClick={() => toast.info('Viewing full stock analysis')} className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold">
             Full Report <ArrowRight className="h-3 w-3" />
           </button>
         </div>
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={stockData} layout="vertical">
+          <BarChart data={INITIAL_STOCK_DATA} layout="vertical">
             <XAxis type="number" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={70} />
             <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }} />
@@ -132,16 +357,24 @@ export function WarehouseDashboard({ user }: { user: User }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-wrap gap-3">
           <div className="flex gap-2">
             {[['stock', 'Stock Items'], ['movements', 'Recent Movements'], ['transfers', 'Transfers']].map(([id, label]) => (
-              <button key={id} onClick={() => setTab(id as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+              <button 
+                key={id} 
+                type="button"
+                onClick={() => { setTab(id as any); setSearch(''); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+              >
                 {label}
               </button>
             ))}
           </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search SKU, name..." className="pl-8 pr-3 py-1.5 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 w-44" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search SKU, name..." 
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 w-44" 
+            />
           </div>
         </div>
 
@@ -174,8 +407,24 @@ export function WarehouseDashboard({ user }: { user: User }) {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => toast.success(`Reorder request for ${item.name} submitted`)} className="text-xs text-primary hover:underline">Reorder</button>
-                        <button onClick={() => toast.info(`Adjusting ${item.name} stock`)} className="text-xs text-muted-foreground hover:text-foreground hover:underline">Adjust</button>
+                        <button 
+                          type="button"
+                          onClick={() => handleReorder(item)} 
+                          className="text-xs text-primary hover:underline font-semibold"
+                        >
+                          Reorder
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setItemQty(item.qty);
+                            setIsAdjustModalOpen(true);
+                          }} 
+                          className="text-xs text-muted-foreground hover:text-foreground hover:underline font-semibold"
+                        >
+                          Adjust
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -187,7 +436,7 @@ export function WarehouseDashboard({ user }: { user: User }) {
 
         {tab === 'movements' && (
           <div className="divide-y divide-border">
-            {RECENT_MOVEMENTS.map(m => (
+            {movements.map(m => (
               <div key={m.ref} className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${m.qty.startsWith('+') ? 'bg-emerald-500/10' : 'bg-orange-500/10'}`}>
                   {m.qty.startsWith('+') ? <Package className="h-4 w-4 text-emerald-500" /> : <Truck className="h-4 w-4 text-orange-500" />}
@@ -204,11 +453,7 @@ export function WarehouseDashboard({ user }: { user: User }) {
 
         {tab === 'transfers' && (
           <div className="p-5 space-y-3">
-            {[
-              { id: 'ST-441', from: 'Warehouse A', to: 'Production Floor', items: 3, status: 'In Transit' },
-              { id: 'ST-442', from: 'Receiving Dock', to: 'Warehouse B', items: 8, status: 'Pending' },
-              { id: 'ST-443', from: 'Warehouse B', to: 'Quality Lab', items: 1, status: 'Completed' },
-            ].map(t => (
+            {transfers.map(t => (
               <div key={t.id} className="flex items-center justify-between p-4 border border-border rounded-xl hover:border-primary/30 transition-colors">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{t.id}: {t.from} → {t.to}</p>
@@ -216,17 +461,213 @@ export function WarehouseDashboard({ user }: { user: User }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge variant={t.status === 'Completed' ? 'success' : t.status === 'In Transit' ? 'default' : 'warning'} size="sm">{t.status}</StatusBadge>
-                  <button onClick={() => toast.info(`Viewing transfer ${t.id}`)} className="text-xs text-primary hover:underline">View</button>
+                  <button 
+                    type="button"
+                    onClick={() => toast.info(`Viewing transfer ${t.id}`)} 
+                    className="px-3 py-1.5 rounded-lg border border-border text-xs hover:bg-muted transition-colors font-semibold"
+                  >
+                    View
+                  </button>
                 </div>
               </div>
             ))}
-            <button onClick={() => toast.success('New transfer initiated')}
-              className="w-full py-2.5 border border-dashed border-border rounded-xl text-xs text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+            <button 
+              type="button"
+              onClick={() => {
+                setTFrom('Warehouse A');
+                setTTo('Production Floor');
+                setTCount(1);
+                setIsTransferModalOpen(true);
+              }}
+              className="w-full py-2.5 border border-dashed border-border rounded-xl text-xs text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors flex items-center justify-center gap-1.5 font-semibold"
+            >
               <Plus className="h-3.5 w-3.5" />New Stock Transfer
             </button>
           </div>
         )}
       </div>
+
+      {/* Receive Goods Modal */}
+      {isReceiveModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button type="button" onClick={() => setIsReceiveModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground mb-4">Receive Goods (GRN)</h2>
+            <form onSubmit={handleReceiveGoods} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Item SKU *</label>
+                  <input
+                    type="text"
+                    value={itemSKU}
+                    onChange={e => setItemSKU(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                    placeholder="e.g. STL-3012"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Storage Location *</label>
+                  <input
+                    type="text"
+                    value={itemLoc}
+                    onChange={e => setItemLoc(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                    placeholder="e.g. A-12-3"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Item Name * (If New SKU)</label>
+                <input
+                  type="text"
+                  value={itemName}
+                  onChange={e => setItemName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  placeholder="e.g. Steel Rod 30mm"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Qty Received *</label>
+                  <input
+                    type="number"
+                    value={itemQty}
+                    onChange={e => setItemQty(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Unit</label>
+                  <input
+                    type="text"
+                    value={itemUnit}
+                    onChange={e => setItemUnit(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                    placeholder="pieces"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Min Level</label>
+                  <input
+                    type="number"
+                    value={itemMin}
+                    onChange={e => setItemMin(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                    min="10"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsReceiveModalOpen(false)} className="flex-1 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                  Receive Stock
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Stock Modal */}
+      {isTransferModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button type="button" onClick={() => setIsTransferModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground mb-4">Transfer Stock</h2>
+            <form onSubmit={handleTransferStock} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">From Location *</label>
+                  <select
+                    value={tFrom}
+                    onChange={e => setTFrom(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  >
+                    <option value="Warehouse A">Warehouse A</option>
+                    <option value="Warehouse B">Warehouse B</option>
+                    <option value="Receiving Dock">Receiving Dock</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">To Location *</label>
+                  <select
+                    value={tTo}
+                    onChange={e => setTTo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  >
+                    <option value="Production Floor">Production Floor</option>
+                    <option value="Warehouse B">Warehouse B</option>
+                    <option value="Quality Lab">Quality Lab</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Number of Item Types *</label>
+                <input
+                  type="number"
+                  value={tCount}
+                  onChange={e => setTCount(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  min="1"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsTransferModalOpen(false)} className="flex-1 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                  Initiate Transfer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Adjust Stock Modal */}
+      {isAdjustModalOpen && selectedItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button type="button" onClick={() => setIsAdjustModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground mb-1">Override Stock Level</h2>
+            <p className="text-xs text-muted-foreground mb-4">Item: {selectedItem.name} ({selectedItem.sku})</p>
+            <form onSubmit={handleAdjustStock} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">New Quantity ({selectedItem.unit}) *</label>
+                <input
+                  type="number"
+                  value={itemQty}
+                  onChange={e => setItemQty(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  min="0"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsAdjustModalOpen(false)} className="flex-1 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                  Apply Adjustment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

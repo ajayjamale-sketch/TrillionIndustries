@@ -54,10 +54,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen w-screen bg-background flex overflow-hidden">
       {/* Left Visual - Demo Credentials */}
-      <div className="hidden lg:flex flex-col flex-1 bg-muted/30 border-r border-border p-12 relative overflow-hidden">
-        <div className="relative z-10 w-full max-w-xl mx-auto h-full flex flex-col">
+      <div className="hidden lg:flex flex-col flex-1 bg-muted/30 border-r border-border p-12 relative overflow-hidden h-full">
+        <div className="relative z-10 w-full max-w-xl mx-auto h-full flex flex-col overflow-hidden">
           <div className="mb-8">
             <div className="w-12 h-12 rounded-xl gradient-brand flex items-center justify-center shadow-brand-lg mb-6">
               <Factory className="h-6 w-6 text-white" />

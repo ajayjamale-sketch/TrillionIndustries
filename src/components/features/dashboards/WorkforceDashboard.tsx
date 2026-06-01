@@ -2,12 +2,45 @@ import { useState } from 'react';
 import {
   Users, TrendingUp, Clock, Calendar, Award, Shield, Plus,
   Download, Search, ArrowRight, CheckCircle2, AlertTriangle,
-  UserCheck, BarChart3, RefreshCw, ChevronDown
+  UserCheck, BarChart3, RefreshCw, ChevronDown, X, Edit
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
+
+interface WorkforceEmployee {
+  id: string;
+  name: string;
+  dept: string;
+  shift: string;
+  status: string;
+  skills: string[];
+  productivity: number;
+}
+
+interface WorkforceShift {
+  shift: string;
+  dept: string;
+  employees: number;
+  coverage: number;
+  supervisor: string;
+}
+
+const INITIAL_EMPLOYEES: WorkforceEmployee[] = [
+  { id: 'EMP-001', name: 'Tom Bradley', dept: 'Production', shift: 'Day', status: 'Present', skills: ['CNC Operation', 'QC'], productivity: 96 },
+  { id: 'EMP-002', name: 'Alice Kim', dept: 'Quality', shift: 'Day', status: 'Present', skills: ['Inspection', 'QMS'], productivity: 98 },
+  { id: 'EMP-003', name: 'Mark Rahman', dept: 'Maintenance', shift: 'Night', status: 'On Leave', skills: ['PLC', 'Hydraulics'], productivity: 89 },
+  { id: 'EMP-004', name: 'Sara Liu', dept: 'Warehouse', shift: 'Day', status: 'Present', skills: ['Forklift', 'SAP WM'], productivity: 91 },
+  { id: 'EMP-005', name: 'Chris Okafor', dept: 'Production', shift: 'Evening', status: 'Late', skills: ['Welding', 'Assembly'], productivity: 84 },
+];
+
+const INITIAL_SHIFTS: WorkforceShift[] = [
+  { shift: 'Day (6AM–2PM)', dept: 'Production', employees: 420, coverage: 98, supervisor: 'J. Smith' },
+  { shift: 'Evening (2PM–10PM)', dept: 'Production', employees: 380, coverage: 95, supervisor: 'R. Patel' },
+  { shift: 'Night (10PM–6AM)', dept: 'Production', employees: 290, coverage: 91, supervisor: 'L. Garcia' },
+  { shift: 'Day (6AM–2PM)', dept: 'Warehouse', employees: 180, coverage: 100, supervisor: 'M. Chan' },
+];
 
 const attendanceData = [
   { day: 'Mon', present: 1820, absent: 42, late: 18 },
@@ -25,24 +58,91 @@ const productivityData = [
   { dept: 'Procurement', score: 87 },
 ];
 
-const EMPLOYEES = [
-  { id: 'EMP-001', name: 'Tom Bradley', dept: 'Production', shift: 'Day', status: 'Present', skills: ['CNC Operation', 'QC'], productivity: 96 },
-  { id: 'EMP-002', name: 'Alice Kim', dept: 'Quality', shift: 'Day', status: 'Present', skills: ['Inspection', 'QMS'], productivity: 98 },
-  { id: 'EMP-003', name: 'Mark Rahman', dept: 'Maintenance', shift: 'Night', status: 'On Leave', skills: ['PLC', 'Hydraulics'], productivity: 89 },
-  { id: 'EMP-004', name: 'Sara Liu', dept: 'Warehouse', shift: 'Day', status: 'Present', skills: ['Forklift', 'SAP WM'], productivity: 91 },
-  { id: 'EMP-005', name: 'Chris Okafor', dept: 'Production', shift: 'Evening', status: 'Late', skills: ['Welding', 'Assembly'], productivity: 84 },
-];
-
-const SHIFTS = [
-  { shift: 'Day (6AM–2PM)', dept: 'Production', employees: 420, coverage: 98, supervisor: 'J. Smith' },
-  { shift: 'Evening (2PM–10PM)', dept: 'Production', employees: 380, coverage: 95, supervisor: 'R. Patel' },
-  { shift: 'Night (10PM–6AM)', dept: 'Production', employees: 290, coverage: 91, supervisor: 'L. Garcia' },
-  { shift: 'Day (6AM–2PM)', dept: 'Warehouse', employees: 180, coverage: 100, supervisor: 'M. Chan' },
-];
-
 export function WorkforceDashboard({ user }: { user: User }) {
+  const [employees, setEmployees] = useState<WorkforceEmployee[]>(INITIAL_EMPLOYEES);
+  const [shifts, setShifts] = useState<WorkforceShift[]>(INITIAL_SHIFTS);
   const [tab, setTab] = useState<'employees' | 'attendance' | 'shifts'>('employees');
   const [search, setSearch] = useState('');
+
+  // Modals state
+  const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
+  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [selectedShiftIndex, setSelectedShiftIndex] = useState<number | null>(null);
+
+  // Employee form state
+  const [empName, setEmpName] = useState('');
+  const [empDept, setEmpDept] = useState('Production');
+  const [empShift, setEmpShift] = useState('Day');
+  const [empStatus, setEmpStatus] = useState('Present');
+  const [empSkills, setEmpSkills] = useState('');
+  const [empProd, setEmpProd] = useState(90);
+
+  // Shift form state
+  const [sSuper, setSSuper] = useState('');
+  const [sCoverage, setSCoverage] = useState(100);
+
+  const handleAddEmployee = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!empName.trim() || !empSkills.trim()) {
+      toast.error('Please enter all required fields');
+      return;
+    }
+    const newEmp: WorkforceEmployee = {
+      id: `EMP-00${employees.length + 1}`,
+      name: empName,
+      dept: empDept,
+      shift: empShift,
+      status: empStatus,
+      skills: empSkills.split(',').map(s => s.trim()).filter(Boolean),
+      productivity: empProd
+    };
+    setEmployees(prev => [...prev, newEmp]);
+    setIsEmpModalOpen(false);
+    toast.success(`Registered employee: ${empName}`);
+  };
+
+  const handleUpdateAttendance = (id: string, newStatus: string) => {
+    setEmployees(prev =>
+      prev.map(emp => {
+        if (emp.id === id) {
+          toast.success(`Attendance updated for ${emp.name} to ${newStatus}`);
+          return { ...emp, status: newStatus };
+        }
+        return emp;
+      })
+    );
+  };
+
+  const handleSaveShift = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedShiftIndex === null || !sSuper.trim()) return;
+    setShifts(prev =>
+      prev.map((s, idx) =>
+        idx === selectedShiftIndex
+          ? { ...s, supervisor: sSuper, coverage: sCoverage }
+          : s
+      )
+    );
+    setIsShiftModalOpen(false);
+    toast.success('Shift configurations updated');
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify({ employees, shifts }, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workforce_report_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success('Workforce data exported');
+  };
+
+  const filteredEmployees = employees.filter(e =>
+    e.name.toLowerCase().includes(search.toLowerCase()) || e.dept.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px]">
@@ -54,12 +154,26 @@ export function WorkforceDashboard({ user }: { user: User }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => toast.success('New employee record created')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand">
+          <button 
+            type="button"
+            onClick={() => {
+              setEmpName('');
+              setEmpDept('Production');
+              setEmpShift('Day');
+              setEmpStatus('Present');
+              setEmpSkills('');
+              setEmpProd(90);
+              setIsEmpModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand"
+          >
             <Plus className="h-4 w-4" />Add Employee
           </button>
-          <button onClick={() => toast.info('Downloading workforce report')}
-            className="p-2 rounded-xl border border-border hover:bg-muted transition-colors">
+          <button 
+            type="button"
+            onClick={handleExport}
+            className="p-2 rounded-xl border border-border hover:bg-muted transition-colors"
+          >
             <Download className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
@@ -68,9 +182,9 @@ export function WorkforceDashboard({ user }: { user: User }) {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Employees', value: '1,880', change: '+12 this month', icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-          { label: 'Present Today', value: '1,820', change: '96.8% attendance', icon: UserCheck, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-          { label: 'On Leave', value: '38', change: '8 pending approval', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+          { label: 'Total Employees', value: `1,88${employees.length - 5}`, change: '+12 this month', icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+          { label: 'Present Today', value: `${1820 + employees.filter(e => e.status === 'Present').length - 4}`, change: 'High attendance', icon: UserCheck, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { label: 'On Leave', value: `${38 + employees.filter(e => e.status === 'On Leave').length - 1}`, change: 'Requires review', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           { label: 'Avg Productivity', value: '91.2%', change: '+2.1% vs last week', icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-500/10' },
         ].map(m => {
           const Icon = m.icon;
@@ -91,7 +205,7 @@ export function WorkforceDashboard({ user }: { user: User }) {
       </div>
 
       {/* Charts */}
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5">
           <h3 className="font-semibold text-foreground text-sm mb-4">Weekly Attendance Overview</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -127,17 +241,25 @@ export function WorkforceDashboard({ user }: { user: User }) {
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-wrap gap-3">
           <div className="flex gap-2">
-            {[['employees', 'Employees'], ['attendance', 'Attendance'], ['shifts', 'Shift Schedule']].map(([id, label]) => (
-              <button key={id} onClick={() => setTab(id as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+            {[['employees', 'Employees'], ['attendance', 'Attendance Logs'], ['shifts', 'Shift Schedule']].map(([id, label]) => (
+              <button 
+                key={id} 
+                type="button"
+                onClick={() => { setTab(id as any); setSearch(''); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+              >
                 {label}
               </button>
             ))}
           </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search employees..."
-              className="pl-8 pr-3 py-1.5 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 w-44" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder="Search employees..."
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-muted border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/30 w-44" 
+            />
           </div>
         </div>
 
@@ -156,11 +278,11 @@ export function WorkforceDashboard({ user }: { user: User }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {EMPLOYEES.filter(e => e.name.toLowerCase().includes(search.toLowerCase()) || e.dept.toLowerCase().includes(search.toLowerCase())).map(emp => (
+                {filteredEmployees.map(emp => (
                   <tr key={emp.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{emp.name.split(' ').map(n => n[0]).join('')}</div>
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{emp.name.split(' ').map(n => n[0]).join('')}</div>
                         <div>
                           <p className="text-xs font-semibold text-foreground">{emp.name}</p>
                           <p className="text-[11px] text-muted-foreground">{emp.id}</p>
@@ -187,8 +309,8 @@ export function WorkforceDashboard({ user }: { user: User }) {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-2">
-                        <button onClick={() => toast.info(`Viewing ${emp.name} profile`)} className="text-xs text-primary hover:underline">Profile</button>
-                        <button onClick={() => toast.info(`Editing ${emp.name}`)} className="text-xs text-muted-foreground hover:text-foreground hover:underline">Edit</button>
+                        <button type="button" onClick={() => toast.info(`Viewing ${emp.name} profile`)} className="text-xs text-primary hover:underline font-semibold">Profile</button>
+                        <button type="button" onClick={() => toast.info(`Editing ${emp.name}`)} className="text-xs text-muted-foreground hover:text-foreground hover:underline font-semibold">Edit</button>
                       </div>
                     </td>
                   </tr>
@@ -202,9 +324,9 @@ export function WorkforceDashboard({ user }: { user: User }) {
           <div className="p-5 space-y-3">
             <div className="grid grid-cols-3 gap-4 mb-4">
               {[
-                { label: 'Present', value: '1,820', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                { label: 'Absent', value: '38', color: 'text-red-500', bg: 'bg-red-500/10' },
-                { label: 'Late', value: '22', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { label: 'Present', value: `${1820 + employees.filter(e => e.status === 'Present').length - 4}`, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                { label: 'Absent', value: `${38 + employees.filter(e => e.status === 'Absent' || e.status === 'On Leave').length - 1}`, color: 'text-red-500', bg: 'bg-red-500/10' },
+                { label: 'Late', value: `${22 + employees.filter(e => e.status === 'Late').length - 1}`, color: 'text-amber-500', bg: 'bg-amber-500/10' },
               ].map(s => (
                 <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center`}>
                   <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -212,18 +334,27 @@ export function WorkforceDashboard({ user }: { user: User }) {
                 </div>
               ))}
             </div>
-            {EMPLOYEES.map(emp => (
+            {filteredEmployees.map(emp => (
               <div key={emp.id} className="flex items-center justify-between p-3 border border-border rounded-xl hover:border-primary/30 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{emp.name.split(' ').map(n => n[0]).join('')}</div>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{emp.name.split(' ').map(n => n[0]).join('')}</div>
                   <div>
                     <p className="text-xs font-semibold text-foreground">{emp.name}</p>
                     <p className="text-[11px] text-muted-foreground">{emp.dept} · {emp.shift} Shift</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <select 
+                    value={emp.status} 
+                    onChange={e => handleUpdateAttendance(emp.id, e.target.value)}
+                    className="text-xs px-2 py-1 bg-muted border border-border rounded-lg outline-none font-semibold cursor-pointer"
+                  >
+                    <option value="Present">Present</option>
+                    <option value="Late">Late</option>
+                    <option value="On Leave">On Leave</option>
+                    <option value="Absent">Absent</option>
+                  </select>
                   <StatusBadge variant={emp.status === 'Present' ? 'success' : emp.status === 'Late' ? 'warning' : 'error'} size="sm">{emp.status}</StatusBadge>
-                  <button onClick={() => toast.info(`Updating ${emp.name} attendance`)} className="text-xs text-primary hover:underline">Update</button>
                 </div>
               </div>
             ))}
@@ -244,8 +375,8 @@ export function WorkforceDashboard({ user }: { user: User }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {SHIFTS.map((s, i) => (
-                  <tr key={i} className="hover:bg-muted/30 transition-colors">
+                {shifts.map((s, idx) => (
+                  <tr key={idx} className="hover:bg-muted/30 transition-colors">
                     <td className="px-5 py-3.5 text-xs font-medium text-foreground">{s.shift}</td>
                     <td className="px-5 py-3.5 text-xs text-muted-foreground">{s.dept}</td>
                     <td className="px-5 py-3.5 text-xs text-foreground font-semibold">{s.employees}</td>
@@ -259,7 +390,18 @@ export function WorkforceDashboard({ user }: { user: User }) {
                     </td>
                     <td className="px-5 py-3.5 text-xs text-muted-foreground">{s.supervisor}</td>
                     <td className="px-5 py-3.5">
-                      <button onClick={() => toast.info(`Editing shift schedule`)} className="text-xs text-primary hover:underline">Edit Shift</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setSelectedShiftIndex(idx);
+                          setSSuper(s.supervisor);
+                          setSCoverage(s.coverage);
+                          setIsShiftModalOpen(true);
+                        }} 
+                        className="text-xs text-primary hover:underline font-semibold"
+                      >
+                        Edit Shift
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -268,6 +410,147 @@ export function WorkforceDashboard({ user }: { user: User }) {
           </div>
         )}
       </div>
+
+      {/* Employee Add Modal */}
+      {isEmpModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button type="button" onClick={() => setIsEmpModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground mb-4">Add Employee Directory Profile</h2>
+            <form onSubmit={handleAddEmployee} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Employee Name *</label>
+                <input
+                  type="text"
+                  value={empName}
+                  onChange={e => setEmpName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  placeholder="e.g. Sarah Connor"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Department</label>
+                  <select
+                    value={empDept}
+                    onChange={e => setEmpDept(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  >
+                    <option value="Production">Production</option>
+                    <option value="Warehouse">Warehouse</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Quality">Quality</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Shift</label>
+                  <select
+                    value={empShift}
+                    onChange={e => setEmpShift(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  >
+                    <option value="Day">Day</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Night">Night</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Initial Status</label>
+                  <select
+                    value={empStatus}
+                    onChange={e => setEmpStatus(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  >
+                    <option value="Present">Present</option>
+                    <option value="Late">Late</option>
+                    <option value="On Leave">On Leave</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Productivity Score (%)</label>
+                  <input
+                    type="number"
+                    value={empProd}
+                    onChange={e => setEmpProd(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                    min="1"
+                    max="100"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Skills (Comma-separated) *</label>
+                <input
+                  type="text"
+                  value={empSkills}
+                  onChange={e => setEmpSkills(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  placeholder="e.g. Welding, Safety, Logistics"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsEmpModalOpen(false)} className="flex-1 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                  Register Employee
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Shift Update Modal */}
+      {isShiftModalOpen && selectedShiftIndex !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button type="button" onClick={() => setIsShiftModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground mb-1">Configure Shift</h2>
+            <p className="text-xs text-muted-foreground mb-4">Department: {shifts[selectedShiftIndex].dept} · Shift: {shifts[selectedShiftIndex].shift}</p>
+            <form onSubmit={handleSaveShift} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Shift Supervisor *</label>
+                <input
+                  type="text"
+                  value={sSuper}
+                  onChange={e => setSSuper(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  placeholder="e.g. John Smith"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Coverage Rate (%)</label>
+                <input
+                  type="number"
+                  value={sCoverage}
+                  onChange={e => setSCoverage(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm focus:outline-none focus:border-primary"
+                  min="0"
+                  max="100"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setIsShiftModalOpen(false)} className="flex-1 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+                  Save Shift Settings
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,86 +1,207 @@
 import { useState } from 'react';
-import { Lock, AlertOctagon, CheckCircle2, Shield, History, Eye } from 'lucide-react';
+import { Lock, Shield, RefreshCw, Key, Power, AlertTriangle, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
 
-const THREATS = [
-  { id: 'THR-001', type: 'Brute Force Attempt', ip: '192.168.44.21', target: 'admin@titan.com', time: '10 min ago', severity: 'High', status: 'Blocked' },
-  { id: 'THR-002', type: 'Unusual API Activity', ip: '10.0.8.114', target: 'API Key AK-221', time: '1h ago', severity: 'Medium', status: 'Monitoring' },
-  { id: 'THR-003', type: 'Failed Login x12', ip: '172.16.0.44', target: 'procurement@global.com', time: '3h ago', severity: 'Low', status: 'Resolved' },
+const SECURITY_METRICS = [
+  { label: 'Security Score', value: '98/100' },
+  { label: 'Active Sessions', value: '1,842' },
+  { label: 'API Keys Active', value: '24' },
+  { label: 'Failed Logins (24h)', value: '127' },
 ];
 
-const SECURITY_METRICS = [
-  { label: 'Security Score', value: '98/100' }, { label: 'Failed Logins (24h)', value: '127' },
-  { label: 'Active Sessions', value: '1,842' }, { label: 'API Keys Issued', value: '284' },
+interface APIKey {
+  id: string;
+  name: string;
+  scope: 'Read-only' | 'Read/Write' | 'Admin Access';
+  created: string;
+  status: 'Active' | 'Revoked';
+}
+
+const INITIAL_KEYS: APIKey[] = [
+  { id: 'AK-9883', name: 'IIoT Telemetry Gateway', scope: 'Read/Write', created: '2026-01-15', status: 'Active' },
+  { id: 'AK-2211', name: 'ERP Finance Link', scope: 'Admin Access', created: '2026-03-22', status: 'Active' },
+  { id: 'AK-4040', name: 'Warehouse Dispatch Hook', scope: 'Read-only', created: '2026-05-10', status: 'Active' },
+  { id: 'AK-1102', name: 'External HR Sync Service', scope: 'Read/Write', created: '2025-11-04', status: 'Revoked' }
 ];
 
 export function SecurityCenterPage({ user }: { user: User }) {
-  const [tab, setTab] = useState<'threats' | 'sessions' | 'audit'>('threats');
+  const [apiKeys, setApiKeys] = useState<APIKey[]>(INITIAL_KEYS);
+  const [sessionsCount, setSessionsCount] = useState(1842);
+
+  const handleRevokeKey = (id: string) => {
+    setApiKeys(prev => 
+      prev.map(key => key.id === id ? { ...key, status: 'Revoked' } : key)
+    );
+    toast.warning(`API Key ${id} has been revoked.`);
+  };
+
+  const handleCreateKey = () => {
+    const newKey: APIKey = {
+      id: `AK-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: `External Client Hook #${apiKeys.length + 1}`,
+      scope: 'Read-only',
+      created: new Date().toISOString().split('T')[0],
+      status: 'Active'
+    };
+    setApiKeys([...apiKeys, newKey]);
+    toast.success(`New API key ${newKey.id} generated!`);
+  };
+
+  const handleTerminateSuspicious = () => {
+    toast.warning('All suspicious active sessions terminated.');
+    setSessionsCount(1838); // simulate terminating 4 suspicious sessions
+  };
+
   return (
-    <div className="p-6 space-y-5 max-w-[1200px]">
+    <div className="p-6 space-y-5 max-w-[1400px]">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div><h1 className="text-xl font-bold text-foreground flex items-center gap-2"><Lock className="h-5 w-5" />Security Center</h1><p className="text-sm text-muted-foreground">Platform threat detection and security monitoring</p></div>
+        <div>
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            Security Center
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Platform compliance audits, active sessions, and credential management.</p>
+        </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-          <Shield className="h-3.5 w-3.5" />SOC2 Certified · ISO 27001
+          <Shield className="h-3.5 w-3.5" /> SOC2 Type II Certified
         </div>
       </div>
+
+      {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {SECURITY_METRICS.map(m => (
-          <div key={m.label} className="bg-card border border-border rounded-xl p-4"><p className="text-xs text-muted-foreground mb-2">{m.label}</p><p className="text-2xl font-bold text-foreground">{m.value}</p></div>
+          <div key={m.label} className="bg-card border border-border rounded-xl p-4">
+            <p className="text-xs text-muted-foreground mb-2">{m.label}</p>
+            <p className="text-2xl font-bold text-foreground">
+              {m.label === 'Active Sessions' ? sessionsCount.toLocaleString() : m.value}
+            </p>
+          </div>
         ))}
       </div>
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
-          {[['threats', 'Threat Events'], ['sessions', 'Active Sessions'], ['audit', 'Security Audit']].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id as any)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${tab === id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>{label}</button>
-          ))}
-        </div>
-        {tab === 'threats' && (
-          <div className="divide-y divide-border">
-            {THREATS.map(t => (
-              <div key={t.id} className="flex items-start gap-4 px-5 py-4 hover:bg-muted/30 transition-colors">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.severity === 'High' ? 'bg-red-500/10' : t.severity === 'Medium' ? 'bg-amber-500/10' : 'bg-blue-500/10'}`}>
-                  <AlertOctagon className={`h-4 w-4 ${t.severity === 'High' ? 'text-red-500' : t.severity === 'Medium' ? 'text-amber-500' : 'text-blue-500'}`} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">{t.type}</p>
-                  <p className="text-xs text-muted-foreground">IP: {t.ip} · Target: {t.target} · {t.time}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold ${t.severity === 'High' ? 'text-red-500' : t.severity === 'Medium' ? 'text-amber-500' : 'text-muted-foreground'}`}>{t.severity}</span>
-                  <StatusBadge variant={t.status === 'Blocked' || t.status === 'Resolved' ? 'success' : 'warning'} size="sm">{t.status}</StatusBadge>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {tab === 'sessions' && (
-          <div className="p-5">
-            <p className="text-sm text-muted-foreground mb-4">1,842 active sessions across 290 organizations</p>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              {[{ label: 'Web Sessions', value: '1,421' }, { label: 'Mobile Sessions', value: '284' }, { label: 'API Sessions', value: '137' }].map(s => (
-                <div key={s.label} className="bg-muted/50 rounded-xl p-4 text-center"><p className="text-lg font-bold text-foreground">{s.value}</p><p className="text-xs text-muted-foreground">{s.label}</p></div>
-              ))}
-            </div>
-            <button onClick={() => toast.warning('All suspicious sessions terminated')} className="px-4 py-2 rounded-xl border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">Terminate All Suspicious Sessions</button>
-          </div>
-        )}
-        {tab === 'audit' && (
-          <div className="p-5 space-y-3">
-            <button onClick={() => toast.success('Security audit initiated')} className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"><Shield className="h-4 w-4" />Run Full Security Audit</button>
+
+      {/* Layout Content Grid */}
+      <div className="grid lg:grid-cols-3 gap-5">
+        
+        {/* Compliance Audits */}
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <h3 className="font-semibold text-foreground text-sm border-b border-border pb-3 flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            Security Checks & Audits
+          </h3>
+          
+          <button 
+            onClick={() => toast.success('Platform security scan completed successfully.')}
+            className="w-full py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-brand"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Run Security Audit Scan
+          </button>
+
+          <div className="space-y-3.5 pt-1">
             {[
-              { check: 'SSL Certificate Valid', status: 'Pass' }, { check: 'Database Encryption', status: 'Pass' },
-              { check: 'API Rate Limiting', status: 'Pass' }, { check: 'MFA Enforcement', status: 'Warning' },
-              { check: 'Backup Integrity', status: 'Pass' }, { check: 'OWASP Top 10 Scan', status: 'Pass' },
+              { check: 'SSL Certificate Integrity', status: 'Pass' },
+              { check: 'Database AES-256 Encryption', status: 'Pass' },
+              { check: 'API Rate Limiting Shield', status: 'Pass' },
+              { check: 'MFA Enforcement Status', status: 'Warning' },
+              { check: 'Daily Backup Auditing', status: 'Pass' },
             ].map(c => (
-              <div key={c.check} className="flex items-center justify-between p-3 border border-border rounded-xl">
-                <p className="text-sm text-foreground">{c.check}</p>
-                <StatusBadge variant={c.status === 'Pass' ? 'success' : 'warning'} size="sm">{c.status}</StatusBadge>
+              <div key={c.check} className="flex items-center justify-between p-3 border border-border rounded-xl text-xs bg-muted/20">
+                <p className="font-medium text-foreground">{c.check}</p>
+                <StatusBadge variant={c.status === 'Pass' ? 'success' : 'warning'} size="sm">
+                  {c.status}
+                </StatusBadge>
               </div>
             ))}
           </div>
-        )}
+        </div>
+
+        {/* API Credential Keys */}
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="flex justify-between items-center border-b border-border pb-3">
+            <h3 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+              <Key className="h-4 w-4 text-amber-500" />
+              API Credential Access
+            </h3>
+            <button 
+              onClick={handleCreateKey}
+              className="text-xs text-primary font-semibold hover:underline"
+            >
+              + Create Key
+            </button>
+          </div>
+
+          <div className="divide-y divide-border">
+            {apiKeys.map(key => (
+              <div key={key.id} className="py-3 flex items-start justify-between text-xs gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-foreground truncate max-w-[150px]">{key.name}</p>
+                    <span className="font-mono text-[10px] text-muted-foreground">({key.id})</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Scope: {key.scope} · Issued: {key.created}</p>
+                </div>
+                
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge variant={key.status === 'Active' ? 'success' : 'muted'} size="sm">
+                    {key.status}
+                  </StatusBadge>
+                  {key.status === 'Active' && (
+                    <button 
+                      onClick={() => handleRevokeKey(key.id)}
+                      className="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      title="Revoke Key"
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Sessions control */}
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <h3 className="font-semibold text-foreground text-sm border-b border-border pb-3 flex items-center gap-1.5">
+            <Shield className="h-4 w-4 text-blue-500" />
+            Sessions Management
+          </h3>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            There are currently <span className="font-semibold text-foreground">{sessionsCount.toLocaleString()}</span> active web, mobile, or daemon sessions running across organizations.
+          </p>
+
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Web UI', count: 1421 },
+              { label: 'Mobile App', count: 284 },
+              { label: 'API Links', count: 137 }
+            ].map(item => (
+              <div key={item.label} className="bg-muted/40 border border-border rounded-xl p-3 text-center">
+                <span className="text-sm font-bold text-foreground">{item.count}</span>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{item.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-border space-y-3">
+            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                4 active sessions have been flagged with high-frequency login cycles from mismatched geolocation IPs.
+              </p>
+            </div>
+            <button 
+              onClick={handleTerminateSuspicious}
+              className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
+            >
+              Terminate suspicious sessions
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );

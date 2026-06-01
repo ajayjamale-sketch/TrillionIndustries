@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useScrollTop } from '@/hooks/useScrollTop';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 
 // Role dashboards
 import { ProductionDashboard } from '@/components/features/dashboards/ProductionDashboard';
@@ -90,6 +90,8 @@ import { AuditCenterPage } from '@/pages/dashboard/AuditCenterPage';
 import { AdminOrgsPage } from '@/pages/dashboard/AdminOrgsPage';
 import { SubscriptionsPage } from '@/pages/dashboard/SubscriptionsPage';
 import { SecurityCenterPage } from '@/pages/dashboard/SecurityCenterPage';
+import { ThreatDetectionPage } from '@/pages/dashboard/ThreatDetectionPage';
+import { AuditLogsPage } from '@/pages/dashboard/AuditLogsPage';
 import { PlatformAnalyticsPage } from '@/pages/dashboard/PlatformAnalyticsPage';
 import { SystemHealthPage } from '@/pages/dashboard/SystemHealthPage';
 
@@ -97,7 +99,8 @@ import { SystemHealthPage } from '@/pages/dashboard/SystemHealthPage';
 import {
   TrendingUp, TrendingDown, Package, Factory, Wrench, Users,
   AlertTriangle, CheckCircle2, Clock, ArrowRight, Activity,
-  BarChart3, ShoppingCart, Cpu, Plus, Download, RefreshCw, Bot, Zap
+  BarChart3, ShoppingCart, Cpu, Plus, Download, RefreshCw, Bot, Zap,
+  X, Trash2
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { StatusBadge } from '@/components/features/StatusBadge';
@@ -136,10 +139,10 @@ const METRICS = [
 ];
 
 const WORK_ORDERS = [
-  { id: 'WO-4421', product: 'Steel Shaft Assembly', line: 'Line A', progress: 78, qty: 500, due: 'Jun 3' },
-  { id: 'WO-4422', product: 'Hydraulic Cylinder', line: 'Line B', progress: 45, qty: 200, due: 'Jun 4' },
-  { id: 'WO-4423', product: 'Bearing Housing', line: 'Line C', progress: 100, qty: 750, due: 'Jun 2' },
-  { id: 'WO-4424', product: 'Pump Impeller', line: 'Line A', progress: 12, qty: 300, due: 'Jun 6' },
+  { id: 'WO-4421', product: 'Steel Shaft Assembly', line: 'Line A', progress: 78, qty: 500, due: 'Jun 3', status: 'In Progress' },
+  { id: 'WO-4422', product: 'Hydraulic Cylinder', line: 'Line B', progress: 45, qty: 200, due: 'Jun 4', status: 'In Progress' },
+  { id: 'WO-4423', product: 'Bearing Housing', line: 'Line C', progress: 100, qty: 750, due: 'Jun 2', status: 'Completed' },
+  { id: 'WO-4424', product: 'Pump Impeller', line: 'Line A', progress: 12, qty: 300, due: 'Jun 6', status: 'In Progress' },
 ];
 
 const AI_INSIGHTS = [
@@ -149,10 +152,61 @@ const AI_INSIGHTS = [
 ];
 
 function EnterpriseAdminDashboard({ user }: { user: any }) {
+  const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('6M');
   const [alerts, setAlerts] = useState(ALERTS);
+  const [workOrders, setWorkOrders] = useState(WORK_ORDERS);
+  
+  // Modal toggles
+  const [showAddWOModal, setShowAddWOModal] = useState(false);
+  const [selectedWO, setSelectedWO] = useState<any>(null);
 
-  const dismissAlert = (id: number) => { setAlerts(p => p.filter(a => a.id !== id)); toast.success('Alert dismissed'); };
+  // New WO form state
+  const [woForm, setWoForm] = useState({
+    product: '',
+    line: 'Line A',
+    qty: 100,
+    due: 'Jun 5'
+  });
+
+  const dismissAlert = (id: number) => { 
+    setAlerts(p => p.filter(a => a.id !== id)); 
+    toast.success('Alert dismissed'); 
+  };
+
+  const handleCreateWO = () => {
+    if (!woForm.product.trim()) {
+      toast.error('Please enter a product name');
+      return;
+    }
+
+    const newWO = {
+      id: `WO-${4425 + workOrders.length}`,
+      product: woForm.product,
+      line: woForm.line,
+      progress: 0,
+      qty: Number(woForm.qty),
+      due: woForm.due,
+      status: 'In Progress'
+    };
+
+    setWorkOrders([newWO, ...workOrders]);
+    setShowAddWOModal(false);
+    setWoForm({ product: '', line: 'Line A', qty: 100, due: 'Jun 5' });
+    toast.success(`Work Order ${newWO.id} created successfully`);
+  };
+
+  const handleCompleteWO = (id: string) => {
+    setWorkOrders(prev => prev.map(wo => wo.id === id ? { ...wo, progress: 100, status: 'Completed' } : wo));
+    setSelectedWO(prev => prev && prev.id === id ? { ...prev, progress: 100, status: 'Completed' } : prev);
+    toast.success(`Work Order ${id} marked as Completed`);
+  };
+
+  const handleDeleteWO = (id: string) => {
+    setWorkOrders(prev => prev.filter(wo => wo.id !== id));
+    setSelectedWO(null);
+    toast.success(`Work Order ${id} removed`);
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px]">
@@ -167,7 +221,7 @@ function EnterpriseAdminDashboard({ user }: { user: any }) {
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
             <Activity className="h-3.5 w-3.5" />All Systems Live
           </div>
-          <button onClick={() => toast.success('New Work Order created')}
+          <button onClick={() => setShowAddWOModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand">
             <Plus className="h-4 w-4" />New Work Order
           </button>
@@ -186,7 +240,8 @@ function EnterpriseAdminDashboard({ user }: { user: any }) {
         </div>
         <div className="grid sm:grid-cols-3 gap-3">
           {AI_INSIGHTS.map((ins, i) => (
-            <div key={i} className="bg-background/60 rounded-lg p-3 flex gap-2.5">
+            <div key={i} onClick={() => toast.info(`Copilot details: ${ins.text}`)}
+              className="bg-background/60 rounded-lg p-3 flex gap-2.5 cursor-pointer hover:bg-background/80 transition-colors">
               <Zap className={`h-4 w-4 shrink-0 mt-0.5 ${ins.type === 'alert' ? 'text-amber-500' : ins.type === 'forecast' ? 'text-blue-500' : 'text-emerald-500'}`} />
               <p className="text-xs text-muted-foreground leading-relaxed">{ins.text}</p>
             </div>
@@ -280,14 +335,14 @@ function EnterpriseAdminDashboard({ user }: { user: any }) {
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             <h3 className="font-semibold text-foreground text-sm">Active Work Orders</h3>
-            <button onClick={() => toast.info('Opening full work orders list')} className="flex items-center gap-1 text-xs text-primary hover:underline">
+            <button onClick={() => navigate('/dashboard/production')} className="flex items-center gap-1 text-xs text-primary hover:underline">
               View All <ArrowRight className="h-3 w-3" />
             </button>
           </div>
           <div className="divide-y divide-border">
-            {WORK_ORDERS.map(wo => (
+            {workOrders.map(wo => (
               <div key={wo.id} className="px-5 py-3.5 hover:bg-muted/30 transition-colors cursor-pointer"
-                onClick={() => toast.info(`Opening ${wo.id}`)}>
+                onClick={() => setSelectedWO(wo)}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono text-muted-foreground">{wo.id}</span>
@@ -338,15 +393,114 @@ function EnterpriseAdminDashboard({ user }: { user: any }) {
           </div>
         </div>
       </div>
+
+      {/* Create WO Modal */}
+      {showAddWOModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-bold text-foreground">Create Work Order</h3>
+              <button onClick={() => setShowAddWOModal(false)} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground uppercase mb-1.5">Product Name *</label>
+                <input type="text" value={woForm.product} onChange={e => setWoForm(p => ({ ...p, product: e.target.value }))}
+                  placeholder="e.g. Pump Shaft Segment" className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground uppercase mb-1.5">Production Line</label>
+                  <select value={woForm.line} onChange={e => setWoForm(p => ({ ...p, line: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none">
+                    {['Line A', 'Line B', 'Line C', 'Line D'].map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-foreground uppercase mb-1.5">Due Date</label>
+                  <input type="text" value={woForm.due} onChange={e => setWoForm(p => ({ ...p, due: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-foreground uppercase mb-1.5">Target Quantity</label>
+                <input type="number" value={woForm.qty} onChange={e => setWoForm(p => ({ ...p, qty: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none" />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-2">
+              <button onClick={() => setShowAddWOModal(false)} className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted">Cancel</button>
+              <button onClick={handleCreateWO} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90">Create Order</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Work Order Detail Modal */}
+      {selectedWO && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <span className="font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-lg border border-border">{selectedWO.id}</span>
+              <button onClick={() => setSelectedWO(null)} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-muted-foreground uppercase">Product Name</h4>
+                <p className="text-sm font-semibold text-foreground mt-0.5">{selectedWO.product}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">Production Line</h4>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{selectedWO.line}</p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">Target Quantity</h4>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{selectedWO.qty.toLocaleString()} units</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">Due Date</h4>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{selectedWO.due}</p>
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">Progress</h4>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{selectedWO.progress}%</p>
+                </div>
+              </div>
+              <div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${selectedWO.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${selectedWO.progress}%` }} />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-between">
+              <button onClick={() => handleDeleteWO(selectedWO.id)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold hover:bg-red-500 hover:text-white transition-colors">
+                <Trash2 className="h-3.5 w-3.5" /> Remove
+              </button>
+              <div className="flex gap-2">
+                <button onClick={() => setSelectedWO(null)} className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted">Close</button>
+                {selectedWO.progress < 100 && (
+                  <button onClick={() => handleCompleteWO(selectedWO.id)}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600">Mark Completed</button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Route → Component mapping ──
-function useDashboardPage(user: NonNullable<ReturnType<typeof useAuth>['user']>) {
-  const location = useLocation();
-  const path = location.pathname;
-
+function getDashboardSubPage(path: string, user: NonNullable<ReturnType<typeof useAuth>['user']>) {
   // Global modules
   if (path === '/dashboard/notifications') return <NotificationsPage user={user} />;
   if (path === '/dashboard/messages') return <MessagesPage user={user} />;
@@ -427,7 +581,9 @@ function useDashboardPage(user: NonNullable<ReturnType<typeof useAuth>['user']>)
   // Super Admin
   if (path === '/dashboard/admin/organizations') return <AdminOrgsPage user={user} />;
   if (path === '/dashboard/admin/subscriptions') return <SubscriptionsPage user={user} />;
-  if (path === '/dashboard/admin/security' || path === '/dashboard/admin/threats' || path === '/dashboard/admin/audit') return <SecurityCenterPage user={user} />;
+  if (path === '/dashboard/admin/security') return <SecurityCenterPage user={user} />;
+  if (path === '/dashboard/admin/threats') return <ThreatDetectionPage user={user} />;
+  if (path === '/dashboard/admin/audit') return <AuditLogsPage user={user} />;
   if (path === '/dashboard/admin/analytics') return <PlatformAnalyticsPage user={user} />;
   if (path === '/dashboard/admin/health' || path === '/dashboard/admin/compliance') return <SystemHealthPage user={user} />;
 
@@ -449,12 +605,27 @@ function useDashboardPage(user: NonNullable<ReturnType<typeof useAuth>['user']>)
 
 export default function Dashboard() {
   useScrollTop();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
 
-  if (!user) { navigate('/login'); return null; }
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center shadow-brand-lg animate-pulse mb-1">
+            <Factory className="h-4.5 w-4.5 text-white" />
+          </div>
+          <p className="text-xs text-muted-foreground font-medium animate-pulse">Verifying credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const SubPage = useDashboardPage(user);
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const SubPage = getDashboardSubPage(location.pathname, user);
 
   const renderMainDashboard = () => {
     switch (user.role) {
@@ -478,3 +649,4 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
+

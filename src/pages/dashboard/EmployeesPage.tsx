@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Users, Plus, Search, Edit, Eye, Mail, Trash2, X } from 'lucide-react';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ export function EmployeesPage({ user }: { user: User }) {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
+  const [viewingEmp, setViewingEmp] = useState<Employee | null>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -117,7 +119,11 @@ export function EmployeesPage({ user }: { user: User }) {
           <h1 className="text-xl font-bold text-foreground">Employee Directory</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{employees.length} total employees</p>
         </div>
-        <button onClick={openAddModal} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand">
+        <button 
+          type="button"
+          onClick={openAddModal} 
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand"
+        >
           <Plus className="h-4 w-4" />
           Add Employee
         </button>
@@ -137,6 +143,7 @@ export function EmployeesPage({ user }: { user: User }) {
           {DEPTS.map(d => (
             <button 
               key={d} 
+              type="button"
               onClick={() => setDept(d)} 
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dept === d ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
             >
@@ -167,14 +174,28 @@ export function EmployeesPage({ user }: { user: User }) {
             </div>
             
             <div className="flex gap-2">
-              <button onClick={() => toast.info(`Viewing ${emp.name} profile`)} className="flex-1 py-1.5 rounded-lg bg-muted text-xs font-medium hover:bg-muted/70 transition-colors flex items-center justify-center gap-1">
+              <button 
+                type="button"
+                onClick={() => setViewingEmp(emp)} 
+                className="flex-1 py-1.5 rounded-lg bg-muted text-xs font-medium hover:bg-muted/70 transition-colors flex items-center justify-center gap-1"
+              >
                 <Eye className="h-3 w-3" />
                 View
               </button>
-              <button onClick={() => openEditModal(emp)} className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors" title="Edit Employee">
+              <button 
+                type="button"
+                onClick={() => openEditModal(emp)} 
+                className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors" 
+                title="Edit Employee"
+              >
                 <Edit className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
-              <button onClick={() => handleDelete(emp.id)} className="p-1.5 rounded-lg border border-border text-red-500 hover:bg-red-500/10 transition-colors" title="Delete Employee">
+              <button 
+                type="button"
+                onClick={() => handleDelete(emp.id)} 
+                className="p-1.5 rounded-lg border border-border text-red-500 hover:bg-red-500/10 transition-colors" 
+                title="Delete Employee"
+              >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -183,7 +204,7 @@ export function EmployeesPage({ user }: { user: User }) {
       </div>
 
       {/* Modal Dialog */}
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
@@ -275,7 +296,76 @@ export function EmployeesPage({ user }: { user: User }) {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Details View Modal */}
+      {viewingEmp && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button onClick={() => setViewingEmp(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground mb-6">Employee Profile</h2>
+            
+            <div className="flex flex-col items-center text-center pb-6 border-b border-border">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary mb-3">
+                {getInitials(viewingEmp.name)}
+              </div>
+              <h3 className="text-base font-bold text-foreground">{viewingEmp.name}</h3>
+              <p className="text-sm text-muted-foreground">{viewingEmp.role}</p>
+              <div className="mt-2">
+                <StatusBadge variant={viewingEmp.status === 'Active' ? 'success' : 'warning'} size="sm">
+                  {viewingEmp.status}
+                </StatusBadge>
+              </div>
+            </div>
+
+            <div className="py-4 space-y-3.5">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">Employee ID</span>
+                <span className="text-foreground font-semibold">{viewingEmp.id}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">Department</span>
+                <span className="text-foreground font-semibold">{viewingEmp.dept}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">Email Address</span>
+                <span className="text-foreground font-semibold truncate max-w-[240px]" title={viewingEmp.email}>
+                  {viewingEmp.email}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">Joining Date</span>
+                <span className="text-foreground font-semibold">{viewingEmp.joined}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-border">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setViewingEmp(null);
+                  openEditModal(viewingEmp);
+                }} 
+                className="flex-1 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Edit className="h-4 w-4 text-muted-foreground" />
+                Edit Profile
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setViewingEmp(null)} 
+                className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
