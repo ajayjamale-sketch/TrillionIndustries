@@ -70,6 +70,8 @@ import { SkillsPage } from '@/pages/dashboard/SkillsPage';
 import { SafetyPage } from '@/pages/dashboard/SafetyPage';
 
 import { InspectionsPage } from '@/pages/dashboard/InspectionsPage';
+import { CreateInspectionPage } from '@/pages/dashboard/CreateInspectionPage';
+import { SupplierQCPage } from '@/pages/dashboard/SupplierQCPage';
 import { NCRPage } from '@/pages/dashboard/NCRPage';
 import { CAPAPage } from '@/pages/dashboard/CAPAPage';
 import { AuditsPage } from '@/pages/dashboard/AuditsPage';
@@ -561,7 +563,9 @@ function getDashboardSubPage(path: string, user: NonNullable<ReturnType<typeof u
   if (path === '/dashboard/workforce/safety' || path === '/dashboard/workforce/compliance') return <SafetyPage user={user} />;
 
   // Quality
-  if (path === '/dashboard/quality/inspections' || path === '/dashboard/quality/create-inspection' || path === '/dashboard/quality/supplier-qc') return <InspectionsPage user={user} />;
+  if (path === '/dashboard/quality/create-inspection') return <CreateInspectionPage user={user} />;
+  if (path === '/dashboard/quality/inspections') return <InspectionsPage user={user} />;
+  if (path === '/dashboard/quality/supplier-qc') return <SupplierQCPage user={user} />;
   if (path === '/dashboard/quality/ncr' || path === '/dashboard/quality/defects') return <NCRPage user={user} />;
   if (path === '/dashboard/quality/capa') return <CAPAPage user={user} />;
   if (path === '/dashboard/quality/audits') return <AuditsPage user={user} />;

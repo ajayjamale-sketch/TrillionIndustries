@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ClipboardList, Plus, Search, CheckCircle2, X, Eye, FileSpreadsheet, BarChart2 } from 'lucide-react';
+import { Search, X, BarChart2, Download, Award, ShieldCheck } from 'lucide-react';
 import { StatusBadge } from '@/components/features/StatusBadge';
 import { toast } from 'sonner';
 import { User } from '@/types';
@@ -27,57 +27,12 @@ const INITIAL_INSPECTIONS: Inspection[] = [
 export function InspectionsPage({ user }: { user: User }) {
   const [inspections, setInspections] = useState<Inspection[]>(INITIAL_INSPECTIONS);
   const [search, setSearch] = useState('');
-  const [showNew, setShowNew] = useState(false);
   const [selectedInsp, setSelectedInsp] = useState<Inspection | null>(null);
-
-  // New Inspection Form State
-  const [product, setProduct] = useState('');
-  const [batch, setBatch] = useState('');
-  const [inspector, setInspector] = useState('');
-  const [date, setDate] = useState('');
-  const [type, setType] = useState('In-Process');
-  const [passCount, setPassCount] = useState(0);
-  const [failCount, setFailCount] = useState(0);
-  const [status, setStatus] = useState('Scheduled');
 
   // Edit/Detail states
   const [detailPass, setDetailPass] = useState(0);
   const [detailFail, setDetailFail] = useState(0);
   const [detailStatus, setDetailStatus] = useState('');
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!product.trim() || !batch.trim() || !inspector.trim() || !date) {
-      toast.error('Please enter all required fields');
-      return;
-    }
-
-    const newInsp: Inspection = {
-      id: `INS-${1200 + inspections.length + 1}`,
-      product,
-      batch,
-      date,
-      inspector,
-      type,
-      pass: status === 'Completed' ? passCount : 0,
-      fail: status === 'Completed' ? failCount : 0,
-      status
-    };
-
-    setInspections([newInsp, ...inspections]);
-    setShowNew(false);
-    toast.success(`Inspection ${newInsp.id} created successfully`);
-
-    // Reset Form
-    setProduct('');
-    setBatch('');
-    setInspector('');
-    setDate('');
-    setType('In-Process');
-    setPassCount(0);
-    setFailCount(0);
-    setStatus('Scheduled');
-  };
 
   const handleSaveDetails = () => {
     if (!selectedInsp) return;
@@ -96,7 +51,39 @@ export function InspectionsPage({ user }: { user: User }) {
       return ins;
     }));
 
-    toast.success(`Inspection ${selectedInsp.id} updated`);
+    toast.success(`Inspection ${selectedInsp.id} details updated`);
+  };
+
+  const handleDownloadCertificate = (ins: Inspection) => {
+    const certText = `
+==================================================
+        QUALITY CONFORMANCE CERTIFICATE
+==================================================
+Certificate Ref ID: CERT-${ins.id}
+Product Name:       ${ins.product}
+Batch Reference:    ${ins.batch}
+Inspection Date:    ${ins.date}
+Inspector Officer:  ${ins.inspector}
+Evaluation Type:   ${ins.type}
+
+RESULTS OVERVIEW:
+- Total Passed Count: ${ins.pass} units
+- Total Failed Count: ${ins.fail} units
+- Net Pass Ratio:     ${Math.round((ins.pass / (ins.pass + ins.fail)) * 100)}%
+
+STATUS: CONFORMITY VERIFIED
+--------------------------------------------------
+Approved by Trillion Quality Compliance Operations.
+    `;
+    const blob = new Blob([certText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Quality_Certificate_${ins.id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Quality Certificate downloaded for ${ins.id}`);
   };
 
   const filtered = inspections.filter(ins =>
@@ -110,18 +97,28 @@ export function InspectionsPage({ user }: { user: User }) {
     <div className="p-6 space-y-5 max-w-[1200px]">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Quality Inspections</h1>
-          <p className="text-sm text-muted-foreground">Manage and track quality inspection records</p>
+          <h1 className="text-xl font-bold text-foreground">Inspection Results</h1>
+          <p className="text-sm text-muted-foreground">Historical records, pass/fail counts, and QA certifications</p>
         </div>
         <button
-          onClick={() => setShowNew(true)}
+          onClick={() => {
+            const blob = new Blob([JSON.stringify(inspections, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inspections_results_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            toast.success('Inspection results spreadsheet exported');
+          }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors shadow-brand"
         >
-          <Plus className="h-4 w-4" />Create Inspection
+          <Download className="h-4 w-4" /> Export Results
         </button>
       </div>
 
-      {/* Search / Filter bar */}
+      {/* Filter / Search Bar */}
       <div className="flex items-center gap-3 bg-card border border-border p-3 rounded-xl">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -148,7 +145,7 @@ export function InspectionsPage({ user }: { user: User }) {
             <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-8 text-muted-foreground">No inspections found.</td>
+                  <td colSpan={9} className="text-center py-8 text-muted-foreground">No inspection results listed.</td>
                 </tr>
               ) : (
                 filtered.map(ins => (
@@ -174,17 +171,27 @@ export function InspectionsPage({ user }: { user: User }) {
                       </StatusBadge>
                     </td>
                     <td className="px-5 py-3.5">
-                      <button
-                        onClick={() => {
-                          setSelectedInsp(ins);
-                          setDetailPass(ins.pass);
-                          setDetailFail(ins.fail);
-                          setDetailStatus(ins.status);
-                        }}
-                        className="text-xs text-primary hover:underline font-semibold"
-                      >
-                        View
-                      </button>
+                      <div className="flex gap-2.5">
+                        <button
+                          onClick={() => {
+                            setSelectedInsp(ins);
+                            setDetailPass(ins.pass);
+                            setDetailFail(ins.fail);
+                            setDetailStatus(ins.status);
+                          }}
+                          className="text-xs text-primary hover:underline font-semibold"
+                        >
+                          View
+                        </button>
+                        {ins.status === 'Completed' && (ins.pass > 0) && (
+                          <button
+                            onClick={() => handleDownloadCertificate(ins)}
+                            className="text-xs text-emerald-600 hover:underline font-semibold flex items-center gap-0.5"
+                          >
+                            <ShieldCheck className="h-3 w-3" /> Cert
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -194,139 +201,7 @@ export function InspectionsPage({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* Create Modal */}
-      {showNew && createPortal(
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-bold text-foreground flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-primary" /> Create QA Inspection
-              </h3>
-              <button onClick={() => setShowNew(false)} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Product Description *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Steel Shaft"
-                    value={product}
-                    onChange={e => setProduct(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Batch Code *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. BT-9912"
-                    value={batch}
-                    onChange={e => setBatch(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Inspector *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Alice K."
-                    value={inspector}
-                    onChange={e => setInspector(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Inspection Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Inspection Type</label>
-                  <select
-                    value={type}
-                    onChange={e => setType(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none"
-                  >
-                    {['In-Process', 'Final Inspection', 'Incoming QC', 'First Article'].map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-foreground uppercase block mb-1">Status</label>
-                  <select
-                    value={status}
-                    onChange={e => setStatus(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none"
-                  >
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-              </div>
-
-              {status === 'Completed' && (
-                <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-3">
-                  <p className="text-xs font-bold text-foreground">Inspection Metrics</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-emerald-600 block mb-1">Pass Count</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={passCount}
-                        onChange={e => setPassCount(Number(e.target.value))}
-                        className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-red-500 block mb-1">Fail Count</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={failCount}
-                        onChange={e => setFailCount(Number(e.target.value))}
-                        className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                <button
-                  type="button"
-                  onClick={() => setShowNew(false)}
-                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Details / Edit Modal */}
+      {/* Detail / Update Sheet Modal */}
       {selectedInsp && createPortal(
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
@@ -349,14 +224,14 @@ export function InspectionsPage({ user }: { user: User }) {
                   <p className="text-sm font-semibold text-foreground mt-0.5">{selectedInsp.inspector}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase">Date</h4>
-                  <p className="text-sm font-semibold text-foreground mt-0.5">{selectedInsp.date}</p>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">Evaluation Type</h4>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">{selectedInsp.type}</p>
                 </div>
               </div>
 
               {/* Status Update Fields */}
               <div className="border-t border-border pt-4 space-y-3">
-                <label className="block text-xs font-semibold text-foreground uppercase">Update Inspection Status</label>
+                <label className="block text-xs font-semibold text-foreground uppercase">Modify Log Status</label>
                 <select
                   value={detailStatus}
                   onChange={e => setDetailStatus(e.target.value)}
@@ -393,33 +268,44 @@ export function InspectionsPage({ user }: { user: User }) {
                 </div>
               )}
 
-              {/* Display Pass Percentage */}
               {detailStatus === 'Completed' && (detailPass + detailFail > 0) && (
                 <div className="bg-muted/40 p-4 rounded-xl border border-border flex items-center gap-3">
                   <BarChart2 className="h-5 w-5 text-primary" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Quality Pass Rate</p>
+                    <p className="text-xs text-muted-foreground">Quality Pass Ratio</p>
                     <p className="text-sm font-bold text-foreground">
-                      {Math.round((detailPass / (detailPass + detailFail)) * 100)}% Passed ({detailPass} of {detailPass + detailFail} units)
+                      {Math.round((detailPass / (detailPass + detailFail)) * 100)}% Pass Rating ({detailPass} of {detailPass + detailFail} parts)
                     </p>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-end gap-2">
-              <button
-                onClick={() => setSelectedInsp(null)}
-                className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleSaveDetails}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90"
-              >
-                Save Changes
-              </button>
+            <div className="px-6 py-4 border-t border-border bg-muted/20 flex justify-between items-center">
+              <div>
+                {detailStatus === 'Completed' && (detailPass > 0) && (
+                  <button
+                    onClick={() => handleDownloadCertificate({ ...selectedInsp, pass: detailPass, fail: detailFail, status: detailStatus })}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white text-xs font-semibold transition-colors"
+                  >
+                    <Award className="h-3.5 w-3.5" /> Conformance Cert
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedInsp(null)}
+                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleSaveDetails}
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90"
+                >
+                  Save Logs
+                </button>
+              </div>
             </div>
           </div>
         </div>,
