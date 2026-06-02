@@ -606,11 +606,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* System Status */}
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="hidden lg:block">All Systems Operational</span>
-            </div>
+
 
             {/* AI Assistant shortcut */}
             <Link to="/dashboard/ai-assistant"
