@@ -20,16 +20,16 @@ const CHECKS = [
 export function CTABannerSection() {
   const { isAuthenticated } = useAuth();
   return (
-    <section className="py-0 relative overflow-hidden">
+    <section className="py-0 relative overflow-hidden bg-[#0c1220]">
       {/* Background */}
-      <div className="absolute inset-0">
-        <img src={factoryBg} alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0c1220]/97 via-[#0c1220]/88 to-[#1E40AF]/70" />
+      <div className="absolute inset-0 bg-[#0c1220]">
+        <img src={factoryBg} alt="" className="w-full h-full object-cover opacity-40 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0c1220]/95 via-[#0c1220]/80 to-[#1E40AF]/60" />
         {/* Blueprint grid overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(30,64,175,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(30,64,175,0.07)_1px,transparent_1px)] bg-[size:48px_48px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(30,64,175,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(30,64,175,0.07)_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="grid lg:grid-cols-2 gap-14 items-center">
           {/* Left */}
           <div className="space-y-7">
@@ -60,26 +60,27 @@ export function CTABannerSection() {
               ))}
             </div>
 
-            {isAuthenticated ? (
-              <Link
-                to="/payment"
-                className="flex items-center gap-2 px-7 py-3.5 rounded-lg bg-white text-[#0c1220] font-black text-sm hover:bg-gray-100 transition-all hover:translate-y-[-1px] shadow-xl"
-              >
-                Go to Dashboard
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            ) : (
-              <Link
-                to="/register"
-                className="flex items-center gap-2 px-7 py-3.5 rounded-lg bg-white text-[#0c1220] font-black text-sm hover:bg-gray-100 transition-all hover:translate-y-[-1px] shadow-xl"
-              >
-                Start Free Trial
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            )}
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              {isAuthenticated ? (
+                <Link
+                  to="/payment"
+                  className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-white text-[#0c1220] font-black text-sm hover:bg-gray-100 transition-all hover:-translate-y-0.5 shadow-xl"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <Link
+                  to="/register"
+                  className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-white text-[#0c1220] font-black text-sm hover:bg-gray-100 transition-all hover:-translate-y-0.5 shadow-xl"
+                >
+                  Start Free Trial
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
               <Link
                 to="/contact"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-lg bg-white/8 border border-white/15 text-white font-semibold text-sm hover:bg-white/15 transition-all"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/20 transition-all"
               >
                 <Phone className="h-4 w-4" />
                 Talk to an Expert
@@ -104,6 +105,7 @@ export function CTABannerSection() {
               </div>
             ))}
           </div>
+        </div>
       </div>
     </section>
   );

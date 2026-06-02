@@ -575,7 +575,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <header className="h-[60px] border-b border-border bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 sm:px-5 shrink-0 gap-3">
+        <header className="relative z-20 h-[60px] border-b border-border bg-background/95 backdrop-blur-sm flex items-center justify-between px-4 sm:px-5 shrink-0 gap-3">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <button
               onClick={() => { setSidebarOpen(v => !v); setMobileSidebarOpen(v => !v); }}

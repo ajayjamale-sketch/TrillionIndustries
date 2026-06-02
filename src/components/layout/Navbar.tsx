@@ -213,7 +213,7 @@ export function Navbar() {
                 {/* Dropdown */}
                 {item.children && activeDropdown === item.label && (
                   <div
-                    className="absolute top-full left-0 mt-1 w-60 bg-popover border border-border rounded-xl shadow-lg p-1.5"
+                    className="absolute top-full left-0 mt-1 w-60 bg-popover border border-border rounded-xl shadow-lg p-1.5 z-50"
                     onMouseEnter={() => setActiveDropdown(item.label)}
                     onMouseLeave={() => setActiveDropdown(null)}
                   >

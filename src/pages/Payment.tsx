@@ -35,9 +35,9 @@ export default function Payment() {
   };
 
   return (
-    <div className="h-screen w-screen bg-background flex overflow-hidden">
+    <div className="min-h-screen w-full bg-background flex">
       {/* Left Visual */}
-      <div className="hidden lg:flex flex-col flex-1 bg-muted/30 items-center justify-center p-12 relative overflow-hidden h-full border-r border-border">
+      <div className="hidden lg:flex flex-col flex-1 bg-muted/30 items-center justify-center p-12 relative overflow-hidden h-screen sticky top-0 border-r border-border">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:40px_40px] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)]" />
         <div className="relative max-w-sm w-full space-y-6">
           <Link to="/" className="flex items-center gap-2.5 mb-8">
@@ -75,7 +75,7 @@ export default function Payment() {
       </div>
 
       {/* Right: Form */}
-      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-8 lg:px-16 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-8 lg:px-16 min-h-screen">
         <div className="max-w-md w-full mx-auto">
           <Link to="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">

@@ -61,9 +61,9 @@ export default function Register() {
   })();
 
   return (
-    <div className="h-screen w-screen bg-background flex overflow-hidden">
+    <div className="min-h-screen w-full bg-background flex">
       {/* Left Visual */}
-      <div className="hidden lg:flex flex-col flex-1 gradient-hero items-center justify-center p-12 relative overflow-hidden h-full">
+      <div className="hidden lg:flex flex-col flex-1 gradient-hero items-center justify-center p-12 relative overflow-hidden h-screen sticky top-0">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
         <div className="relative max-w-sm space-y-6">
           <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-brand-lg">
@@ -93,7 +93,7 @@ export default function Register() {
       </div>
 
       {/* Right: Form */}
-      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-8 lg:px-16 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-8 lg:px-16 min-h-screen">
         <div className="max-w-md w-full mx-auto">
           <Link to="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">
